@@ -2,11 +2,15 @@ from PChessBoard import *
 from collections import deque
 
 
-class PMultipleModel(QObject):
+class PModel(QGraphicsScene):
+    def __init__(self, parent = None):
+        super(PModel, self).__init__(parent)
+    pass
 
-    def __init__(self,parent:QObject = None):
-        super(PMultipleModel, self).__init__()
-        self.scene = QGraphicsScene()
+
+class PMultipleModel(PModel):
+    def __init__(self, parent = None):
+        super(PMultipleModel, self).__init__(parent)
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
@@ -25,9 +29,9 @@ class PMultipleModel(QObject):
         self.setCursor(self.black_chess_cursor)
         '''
 
-        self.scene.addItem(self.chessboard)
+        self.addItem(self.chessboard)
 
-        self.chessboard.placeChess.connect(self.place_chess(QPointF))
+        #self.chessboard.placeChess.connect(self.place_chess(QPointF))
         pass
 
     @pyqtSlot(QPointF, name='place_chess')
@@ -46,8 +50,7 @@ class PMultipleModel(QObject):
                     temp_black_chessman = BlackChessMan(temp_col, temp_row, parent=self)
                     temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
                                                     self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
-                    self.scene.addItem(temp_black_chessman)
-
+                    self.addItem(temp_black_chessman)
                     self.black_chessman_queue.append(temp_black_chessman)
                     # check for win
                     result = check_win_black(self.situation_matrix)
@@ -67,7 +70,7 @@ class PMultipleModel(QObject):
                     temp_white_chessman = WhiteChessMan(temp_col, temp_row, parent=self)
                     temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
                                                     self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
-                    self.scene.addItem(temp_white_chessman)
+                    self.addItem(temp_white_chessman)
                     self.white_chessman_queue.append(temp_white_chessman)
                     # check for win
                     result = check_win_white(self.situation_matrix)
@@ -96,7 +99,7 @@ class PSingleModel(QObject):
         self.chess_length = 15
 
         self.chessboard.placeChess.connect(self.place_chess)
-        self.scene.addItem(self.chessboard)
+        self.addItem(self.chessboard)
         pass
 
     def place_ches(self,pos:QPointF):

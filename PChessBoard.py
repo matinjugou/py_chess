@@ -5,7 +5,6 @@ from PyQt5.QtGui import *
 
 
 class PChessBoard(QGraphicsPixmapItem):
-    pic = QPixmap()
 
     placeChess = pyqtSignal(QPointF, name='placeChess')
 
@@ -15,10 +14,8 @@ class PChessBoard(QGraphicsPixmapItem):
         # chessboard visual
         ##self.setGeometry(100, 100, 800, 800)
         ##self.setScaledContents(True)
-        self.pic_chessboard = QPixmap("chessboard.bmp")
+        self.pic_chessboard = QPixmap("resources//pic//chessboard.bmp")
         self.setPixmap(self.pic_chessboard)
-
-
 
         # some geometrical argument
         self.left_up_x = 30
@@ -46,7 +43,7 @@ class ChessMan(QGraphicsPixmapItem):
 class BlackChessMan(ChessMan):
     def __init__(self, x, y, parent = None):
         super(BlackChessMan, self).__init__(x, y, parent)
-        self.pic_black_chess_man = QPixmap("blackpiece.bmp")
+        self.pic_black_chess_man = QPixmap("resources//pic//blackpiece.bmp")
         self.setPixmap(self.pic_black_chess_man)
         self.index_pos = (x, y)
         pass
@@ -56,7 +53,7 @@ class BlackChessMan(ChessMan):
 class WhiteChessMan(ChessMan):
     def __init__(self, x, y, parent = None):
         super(WhiteChessMan, self).__init__(x, y, parent)
-        self.pic_whiteChessMan = QPixmap("whitepiece.bmp")
+        self.pic_whiteChessMan = QPixmap("resources//pic//whitepiece.bmp")
         self.setPixmap(self.pic_whiteChessMan)
         self.index_pos = (x, y)
         pass
