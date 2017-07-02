@@ -1,4 +1,4 @@
-# python_Chess
+# python_chess
 
 How to team work
 ---------------
