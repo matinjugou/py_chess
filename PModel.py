@@ -127,6 +127,9 @@ class Node:
         pass
 '''
 
+
+# check win for black piece
+# return value: 0 for not win, 2 for win
 def check_win_black(matrix):
     # check for horizontal
     for i in range(0,15):
