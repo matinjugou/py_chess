@@ -33,7 +33,9 @@ class PMultipleModel(PModel):
 
         #self.chessboard.placeChess.connect(self.place_chess(QPointF))
         pass
-
+    '''
+    TODO:adjust the framework
+    '''
     @pyqtSlot(QPointF, name='place_chess')
     def place_chess(self, pos):
         print(pos.x(), pos.y())
