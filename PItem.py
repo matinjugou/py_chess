@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QGraphicsPixmapItem
 from PyQt5.QtGui import QPixmap
 from abc import ABCMeta, abstractclassmethod
 
-class p_item(QGraphicsPixmapItem):
+
+class PItem(QGraphicsPixmapItem):
     __metaclass__ = ABCMeta
 
     def __init__(self, parent:QGraphicsPixmapItem = None):
