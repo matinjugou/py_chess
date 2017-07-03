@@ -2,7 +2,7 @@
 
 How to use
 ---------------
-Just downloads all those files and use command below
+Just download all those files and use command below
 ```
 python main.py
 ```
