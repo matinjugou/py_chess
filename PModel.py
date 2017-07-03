@@ -155,7 +155,7 @@ def check_win_black(matrix):
             # check for 6 in a row
             if result == 1:
                 if j - 1 >= 0 and j + 5 <= 14:
-                    if matrix[i][j-1] != 1 and matrix[i][j+4] != 1:
+                    if matrix[i][j-1] != 1 and matrix[i][j+5] != 1:
                         return 1
                 elif j - 1 < 0:
                     if matrix[i][j+5] != 1:
@@ -233,7 +233,7 @@ def check_win_white(matrix):
             # check for 6 in a row
             if result == 32:
                 if j - 1 >= 0 and j + 5 <= 14:
-                    if matrix[i][j-1] != 2 and matrix[i][j+4] != 2:
+                    if matrix[i][j-1] != 2 and matrix[i][j+5] != 2:
                         return 2
                 elif j - 1 < 0:
                     if matrix[i][j+5] != 2:
