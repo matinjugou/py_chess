@@ -2,17 +2,23 @@ from PChessBoard import *
 from collections import deque
 
 
+PLAYER_WIN_PROFIT = 100
+AI_WIN_PROFIT = -100
+TIE_PROFIT = 0
+
+
 class PModel(QGraphicsScene):
     def __init__(self, parent = None):
         super(PModel, self).__init__(parent)
     pass
 
-
+'''
 class PStartMenu(PModel):
     def __init__(self, parent = None):
         super(PStartMenu, self).__init__(parent)
         ##TODO:create a startmenu including single player and multiple player
     pass
+'''
 
 class PMultipleModel(PModel):
     def __init__(self, parent = None):
@@ -106,51 +112,33 @@ class PMultipleModel(PModel):
                         '''
             pass
 
-'''
-TODO:trans single model from c plus plus to python
-class PSingleModel(QObject):
 
-    def __init__(self, parent:QObject = None):
+class PSingleModel(PModel):
+
+    def __init__(self, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
         self.chessboard = PChessBoard()
 
-        self.chess_queue = []
-        for i in range(256):
-            self.chess_queue.append(0)
-        self.chess_length = 15
+        self.chessboard.setPos(0, 0)
+        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
 
-        self.chessboard.placeChess.connect(self.place_chess)
+        # stack for black piece and white chess
+        self.black_chessman_queue = deque()
+        self.white_chessman_queue = deque()
+
+        # some argument for a play
+        self.num_pieces = 0
+
         self.addItem(self.chessboard)
         pass
 
-    def place_ches(self,event.pos():QPointF):
-        pass
-
-    @staticmethod
-    def trans_xy_to_i(self, x, y):
-        if (x * 15 + y >= 255) or (x * 15 + y < 0):
-            return 255
-        else:
-            return x * 15 + y
-
-
 class Node:
+    def __init__(self):
+        self.choice = (0, 0)
+        self.
 
-    def __init__(self, x, y, parent, board_queue, visited = 0, term = True, q = 0, board_length = 15):
-        self.x = x
-        self.y = y
-        self.parent = parent
-        self.board_queue = board_queue
-        self.visited = visited
-        self.term = term
-        self.q = q
-        self.board_length = board_length
-        pass
-
-    def full(self, board):
-        pass
-'''
+    pass
 
 
 # check win for black piece
