@@ -62,7 +62,9 @@ class PMultipleModel(PModel):
                         temp_black_chessman = BlackChessMan(self)
                         temp_black_chessman.set_index_pos(temp_col, temp_row)
                         temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                        self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+
+                        print("black_chess_index_pos (%d, %d)" %(temp_col, temp_row))
                         self.addItem(temp_black_chessman)
                         self.black_chessman_queue.append(temp_black_chessman)
                         # check for win
@@ -83,7 +85,8 @@ class PMultipleModel(PModel):
                         temp_white_chessman = WhiteChessMan(self)
                         temp_white_chessman.set_index_pos(temp_col, temp_row)
                         temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                        self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                        print("while_chess_index_pos (%d, %d)" %(temp_col, temp_row))
                         self.addItem(temp_white_chessman)
                         self.white_chessman_queue.append(temp_white_chessman)
                         # check for win
