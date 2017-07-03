@@ -33,58 +33,70 @@ class PMultipleModel(PModel):
 
         #self.chessboard.placeChess.connect(self.place_chess(QPointF))
         pass
-    '''
-    TODO:adjust the framework
-    '''
-    @pyqtSlot(QPointF, name='place_chess')
-    def place_chess(self, pos):
-        print(pos.x(), pos.y())
-        # if on the chess board
-        if self.chessboard.left_up_x - 20 <= pos.x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= pos.y() <= self.chessboard.right_down_y + 20:
-            temp_col = int((pos.x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
-            temp_row = int((pos.y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
-            # that space has not been set piece
-            if self.situation_matrix[temp_row][temp_col] == 0:
-                # black chessman turn
-                if self.num_pieces % 2 == 0:
-                    self.num_pieces += 1
-                    self.situation_matrix[temp_row][temp_col] = 1
-                    temp_black_chessman = BlackChessMan(temp_col, temp_row, parent=self)
-                    temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
-                    self.addItem(temp_black_chessman)
-                    self.black_chessman_queue.append(temp_black_chessman)
-                    # check for win
-                    result = check_win_black(self.situation_matrix)
-                    # if black wins
-                    if result == 1:
-                        print("black wins")
-                        self.restart()
-                    '''
-                    else:
-                        # change the cursor
-                        self.setCursor(self.white_chess_cursor)
-                    '''
 
-                else:
-                    self.num_pieces += 1
-                    self.situation_matrix[temp_row][temp_col] = 2
-                    temp_white_chessman = WhiteChessMan(temp_col, temp_row, parent=self)
-                    temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
-                    self.addItem(temp_white_chessman)
-                    self.white_chessman_queue.append(temp_white_chessman)
-                    # check for win
-                    result = check_win_white(self.situation_matrix)
-                    # if white wins
-                    if result == 2:
-                        print("white wins")
-                        self.restart()
-                    '''
+    # restart
+    def restart(self):
+        self.black_chessman_queue.clear()
+        self.white_chessman_queue.clear()
+        self.num_pieces = 0
+        self.clear()
+        self.chessboard = PChessBoard()
+        self.addItem(self.chessboard)
+
+    # mouse press event
+    def mousePressEvent(self, event):
+        super(PMultipleModel, self).mousePressEvent(event)
+        print(event.pos())
+        if event.button() == Qt.LeftButton:
+            print(event.pos().x(), event.pos().y())
+            # if on the chess board
+            if self.chessboard.left_up_x - 20 <= event.pos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.pos().y() <= self.chessboard.right_down_y + 20:
+                temp_col = int((event.pos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
+                temp_row = int((event.pos().y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
+                # that space has not been set piece
+                if self.situation_matrix[temp_row][temp_col] == 0:
+                    # black chessman turn
+                    if self.num_pieces % 2 == 0:
+                        self.num_pieces += 1
+                        self.situation_matrix[temp_row][temp_col] = 1
+                        temp_black_chessman = BlackChessMan(self)
+                        temp_black_chessman.set_index_pos(temp_col, temp_row)
+                        temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
+                                                        self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                        self.addItem(temp_black_chessman)
+                        self.black_chessman_queue.append(temp_black_chessman)
+                        # check for win
+                        result = check_win_black(self.situation_matrix)
+                        # if black wins
+                        if result == 1:
+                            print("black wins")
+                            self.restart()
+                        '''
+                        else:
+                            # change the cursor
+                            self.setCursor(self.white_chess_cursor)
+                        '''
+
                     else:
-                        self.setCursor(self.black_chess_cursor)
-                    '''
-        pass
+                        self.num_pieces += 1
+                        self.situation_matrix[temp_row][temp_col] = 2
+                        temp_white_chessman = WhiteChessMan(self)
+                        temp_white_chessman.set_index_pos(temp_col, temp_row)
+                        temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
+                                                        self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                        self.addItem(temp_white_chessman)
+                        self.white_chessman_queue.append(temp_white_chessman)
+                        # check for win
+                        result = check_win_white(self.situation_matrix)
+                        # if white wins
+                        if result == 2:
+                            print("white wins")
+                            self.restart()
+                        '''
+                        else:
+                            self.setCursor(self.black_chess_cursor)
+                        '''
+            pass
 
 '''
 TODO:trans single model from c plus plus to python
@@ -104,7 +116,7 @@ class PSingleModel(QObject):
         self.addItem(self.chessboard)
         pass
 
-    def place_ches(self,pos:QPointF):
+    def place_ches(self,event.pos():QPointF):
         pass
 
     @staticmethod

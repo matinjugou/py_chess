@@ -32,16 +32,19 @@ class PChessBoard(QGraphicsPixmapItem):
 
 # base class
 class ChessMan(QGraphicsPixmapItem):
-    def __init__(self, x, y, parent = None):
+    def __init__(self, x = 0, y = 0, parent = None):
         super(ChessMan, self).__init__(parent)
         self.able_to_play = False
         self.index_pos = (x, y)
         pass
 
+    def set_index_pos(self, x, y):
+        self.index_pos = (x, y)
+
 
 # black ChessMan class
 class BlackChessMan(ChessMan):
-    def __init__(self, x, y, parent = None):
+    def __init__(self, x = 0, y = 0, parent = None):
         super(BlackChessMan, self).__init__(x, y, parent)
         self.pic_black_chess_man = QPixmap("resources//pic//blackpiece.bmp")
         self.setPixmap(self.pic_black_chess_man)
@@ -51,7 +54,7 @@ class BlackChessMan(ChessMan):
 
 # white ChessMan class
 class WhiteChessMan(ChessMan):
-    def __init__(self, x, y, parent = None):
+    def __init__(self, x = 0, y = 0, parent = None):
         super(WhiteChessMan, self).__init__(x, y, parent)
         self.pic_whiteChessMan = QPixmap("resources//pic//whitepiece.bmp")
         self.setPixmap(self.pic_whiteChessMan)
