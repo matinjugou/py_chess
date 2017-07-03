@@ -1,6 +1,8 @@
 # python_chess
 
-How to team work
+How to use
 ---------------
-Fork this git and git clone it to your local categories.Once you want to make some changes to this project, please push
-to your own repository and the make a pull request.
+Just downloads all those files and use command below
+```
+python main.py
+```

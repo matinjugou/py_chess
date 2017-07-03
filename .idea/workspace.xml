@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a68e2727-ddc1-4fa6-b16b-fcb96e20c1f0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/PChessBoard.py" afterPath="$PROJECT_DIR$/PChessBoard.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/PModel.py" afterPath="$PROJECT_DIR$/PModel.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/readme.md" afterPath="$PROJECT_DIR$/readme.md" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -31,7 +30,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="PModel.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="PModel.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PModel.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="416">
@@ -39,6 +38,16 @@
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="readme.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/readme.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="96">
+              <caret line="6" column="14" lean-forward="false" selection-start-line="6" selection-start-column="14" selection-end-line="6" selection-end-column="14" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -127,12 +136,12 @@
         <option value="$PROJECT_DIR$/p_model.py" />
         <option value="$PROJECT_DIR$/PItem.py" />
         <option value="$PROJECT_DIR$/Functions.py" />
-        <option value="$PROJECT_DIR$/readme.md" />
         <option value="$PROJECT_DIR$/PModelLoader.py" />
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/PController.py" />
         <option value="$PROJECT_DIR$/PModel.py" />
         <option value="$PROJECT_DIR$/PChessBoard.py" />
+        <option value="$PROJECT_DIR$/readme.md" />
       </list>
     </option>
   </component>
@@ -618,13 +627,6 @@
     <entry file="file://$PROJECT_DIR$/Functions.py" />
     <entry file="file://$PROJECT_DIR$/test.py" />
     <entry file="file://$PROJECT_DIR$/PItem.py" />
-    <entry file="file://$PROJECT_DIR$/readme.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="96">
-          <caret line="6" column="0" lean-forward="true" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/PModelLoader.py" />
     <entry file="file://$PROJECT_DIR$/resources/main.py" />
     <entry file="file://$PROJECT_DIR$/main.py">
@@ -664,6 +666,14 @@
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/readme.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="96">
+          <caret line="6" column="14" lean-forward="false" selection-start-line="6" selection-start-column="14" selection-end-line="6" selection-end-column="14" />
+          <folding />
         </state>
       </provider>
     </entry>
