@@ -5,15 +5,10 @@ from PyQt5.QtGui import *
 
 
 class PChessBoard(QGraphicsPixmapItem):
-
-    placeChess = pyqtSignal(QPointF, name='placeChess')
-
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
 
         # chessboard visual
-        ##self.setGeometry(100, 100, 800, 800)
-        ##self.setScaledContents(True)
         self.pic_chessboard = QPixmap("resources//pic//chessboard.bmp")
         self.setPixmap(self.pic_chessboard)
 

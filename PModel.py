@@ -8,6 +8,12 @@ class PModel(QGraphicsScene):
     pass
 
 
+class PStartMenu(PModel):
+    def __init__(self, parent = None):
+        super(PStartMenu, self).__init__(parent)
+        ##TODO:create a startmenu including single player and multiple player
+    pass
+
 class PMultipleModel(PModel):
     def __init__(self, parent = None):
         super(PMultipleModel, self).__init__(parent)
