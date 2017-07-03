@@ -12,7 +12,7 @@ class PController(QMainWindow):
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
 
-        #only for test, to delete later
+        # only for test, to delete later
         new_game = PMultipleModel()
         self.load_model(new_game)
 
