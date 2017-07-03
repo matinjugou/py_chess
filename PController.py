@@ -48,3 +48,4 @@ class PController(QMainWindow):
         if model_code == 3:
             self.load_start_menu()
         pass
+
