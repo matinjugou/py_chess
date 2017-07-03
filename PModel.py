@@ -30,8 +30,6 @@ class PMultipleModel(PModel):
         '''
 
         self.addItem(self.chessboard)
-
-        #self.chessboard.placeChess.connect(self.place_chess(QPointF))
         pass
 
     # restart
@@ -41,6 +39,7 @@ class PMultipleModel(PModel):
         self.num_pieces = 0
         self.clear()
         self.chessboard = PChessBoard()
+        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
         self.addItem(self.chessboard)
 
     # mouse press event
@@ -61,8 +60,8 @@ class PMultipleModel(PModel):
                         self.situation_matrix[temp_row][temp_col] = 1
                         temp_black_chessman = BlackChessMan(self)
                         temp_black_chessman.set_index_pos(temp_col, temp_row)
-                        temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                        temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
 
                         print("black_chess_index_pos (%d, %d)" %(temp_col, temp_row))
                         self.addItem(temp_black_chessman)
@@ -84,8 +83,8 @@ class PMultipleModel(PModel):
                         self.situation_matrix[temp_row][temp_col] = 2
                         temp_white_chessman = WhiteChessMan(self)
                         temp_white_chessman.set_index_pos(temp_col, temp_row)
-                        temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 15,
-                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 20)
+                        temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
                         print("while_chess_index_pos (%d, %d)" %(temp_col, temp_row))
                         self.addItem(temp_white_chessman)
                         self.white_chessman_queue.append(temp_white_chessman)
