@@ -262,8 +262,36 @@ class PSingleModel(PModel):
         self.state = [0 for i in range(225)]
         pass
 
-    # Standard UCT functions
+    # restart
+    def restart(self,single_move_time=2, max_actions = 1000):
+        self.num_pieces = 0
+        self.clear()
 
+        # some uct arguments
+        self.plays = {}
+        self.wins = {}
+        self.plays_rave = {}
+        self.wins_rave = {}
+
+        self.board = Board()
+        self.calculation_time = float(single_move_time)
+        self.max_actions = max_actions
+        self.confident = 1.96
+        self.max_depth = 1
+        self.equivalence = 10000
+        self.state = [0 for i in range(225)]
+
+        self.available = list(range(225))
+        self.chessboard = PChessBoard()
+        self.returnLabel = PReturn()
+        self.square = PSquare()
+        self.square.hide()
+        self.returnLabel.setPos(540,0)
+        self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
+        self.addItem(self.square)
+
+    # Standard UCT functions
     def get_action(self):
         next_move_x = 0
         next_move_y = 0
@@ -433,6 +461,8 @@ class PSingleModel(PModel):
             if plays.get((player, move)):
                 adjacent.remove(move)
         return adjacent
+
+
 
     # mouse move event
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
