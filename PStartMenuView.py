@@ -19,7 +19,6 @@ class PStartMenu_Multiple(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
 
-
         # multiple label
         self.pic_multiple_1 = QPixmap("resources//pic//multiple1.png")
         self.pic_multiple_2 = QPixmap("resources//pic//multiple2.png")
