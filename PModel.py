@@ -64,9 +64,13 @@ class PMultipleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
+
         # return label
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540,0)
+
+        # cursor square
+        self.square = PSquare()
         '''
         TODO:trans it into current framework
         self.black_chess_cursor = QCursor(QPixmap("blackpiece.bmp"))
@@ -76,6 +80,7 @@ class PMultipleModel(PModel):
 
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
+        self.addItem(self.square)
         pass
 
     # restart
@@ -90,6 +95,18 @@ class PMultipleModel(PModel):
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
+
+    # mouse move event
+    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
+        super(PMultipleModel, self).mousePressEvent(event)
+        # if on the chess board
+        if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
+            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
+            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
+            # that space has not been set piece
+            if self.situation_matrix[temp_row][temp_col] == 0:
+                self.square.setPos(self.chessboard.space * (temp_col + 1) - 30, self.chessboard.space * (temp_row + 1) - 30)
+
 
     # mouse press event
     def mousePressEvent(self, event):

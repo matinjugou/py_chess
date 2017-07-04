@@ -72,6 +72,13 @@ class PReturn(QGraphicsPixmapItem):
         self.setPixmap(self.pic_return_1)
         return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
 
+class PSquare(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        self.pic_square = QPixmap("resources//pic//square.png")
+        self.setPixmap(self.pic_square)
+        self.setScale(0.6)
+
         
 
 
