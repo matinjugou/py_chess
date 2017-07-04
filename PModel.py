@@ -7,7 +7,6 @@ from random import choice
 from math import log, sqrt
 
 
-
 class PModel(QGraphicsScene):
     def __init__(self, parent = None):
         super(PModel, self).__init__(parent)
@@ -115,12 +114,15 @@ class PMultipleModel(PModel):
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
-            if event.scenePos().x() >= 540 and event.scenePos().x() <= 690 and event.scenePos().y() <= 70  and event.scenePos().y() >= 0:
+            if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
                 self.Signal_ChangeModel.emit(3)
             # if on the chess board
-            if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
-                temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
-                temp_row = int((event.scenePos().y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
+            if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20\
+                    and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
+                temp_col = int((event.scenePos().x() - self.chessboard.left_up_x +
+                                0.25 * self.chessboard.space) / self.chessboard.space)
+                temp_row = int((event.scenePos().y() - self.chessboard.left_up_y +
+                                0.25 * self.chessboard.space) / self.chessboard.space)
                 # that space has not been set piece
                 if self.situation_matrix[temp_row][temp_col] == 0:
                     # black chessman turn
@@ -273,7 +275,15 @@ class PSingleModel(PModel):
             board_copy = copy.deepcopy(self.board)
             self.run_simulation(board_copy, self.num_pieces % 2)
             simulations += 1
-        return next_move_x, next_move_y
+        print("total simulations=", simulations)
+
+        move = self.select_one_move(self.num_pieces % 2)
+        location = self.board.move_to_location(move)
+        print('Maximum depth searched:', self.max_depth)
+
+        print("AI move: %d,%d\n" % (location[0], location[1]))
+
+        return move
 
     # TODO:Trans these codes into my framework
 
@@ -355,7 +365,7 @@ class PSingleModel(PModel):
         width = board.width
         height = board.height
         states = board.states
-        n = self.n_in_row
+        n = 5
         for m in moved:
             h = m // width
             w = m % width
@@ -378,6 +388,14 @@ class PSingleModel(PModel):
                 return True, player
 
         return False, -1
+
+    def select_one_move(self, player):
+        percent_wins, move = max(
+            (self.wins.get((player, move), 0) /
+             self.plays.get((player, move), 1),
+             move)
+            for move in self.board.available)  # 选择胜率最高的着法
+        return move
 
     def adjacent_moves(self, board, player, plays):
         moved = list(set(range(225)) - set(board.available))
@@ -425,22 +443,24 @@ class PSingleModel(PModel):
                 temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
                 temp_row = int((event.scenePos().y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
                 # that space has not been set piece
-                if self.situation_matrix[temp_row][temp_col] == 0:
+                temp_move = temp_row * 15 + temp_col
+                if temp_row in self.board.available:
                     # black chessman turn
                     self.num_pieces += 1
-                    self.situation_matrix[temp_row][temp_col] = 1
+                    self.board.update(self.num_pieces % 2, temp_move)
                     temp_black_chessman = BlackChessMan(self)
                     temp_black_chessman.set_index_pos(temp_col, temp_row)
                     temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
                                                 self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
                     print("black_chess_index_pos (%d, %d)" %(temp_col, temp_row))
                     self.addItem(temp_black_chessman)
-                    self.black_chessman_queue.append(temp_black_chessman)
+                    # TODO:whether add backup
+                    #self.black_chessman_queue.append(temp_black_chessman)
                     # check for win
-                    result = check_win_black(self.situation_matrix)
+                    result, winner = self.has_a_winner(self.board)
                     # if black wins
-                    if result == 1:
-                        print("black wins")
+                    if result:
+                        print(winner, "wins")
                         self.restart()
                     '''
                     else:
@@ -451,21 +471,22 @@ class PSingleModel(PModel):
                     # AI's turn
                     self.num_pieces += 1
                     # uct search for best solution
-                    next_move_row, next_move_col = self.uct_search(self.situation_matrix)
-
-                    self.situation_matrix[next_move_row][next_move_col] = 2
+                    next_move = self.get_action()
+                    next_move_row, next_move_col = self.board.move_to_location(next_move)
+                    self.board.update(self.num_pieces % 2, next_move)
                     temp_white_chessman = WhiteChessMan(self)
                     temp_white_chessman.set_index_pos(next_move_col, next_move_row)
                     temp_white_chessman.setPos(self.chessboard.left_up_x + next_move_col * self.chessboard.space - 17,
                                                 self.chessboard.left_up_y + next_move_row * self.chessboard.space - 17)
                     print("while_chess_index_pos (%d, %d)" %(next_move_col, next_move_row))
                     self.addItem(temp_white_chessman)
-                    self.white_chessman_queue.append(temp_white_chessman)
+                    # TODO:whether add backup
+                    # self.white_chessman_queue.append(temp_white_chessman)
                     # check for win
-                    result = check_win_white(self.situation_matrix)
+                    result, winner = self.has_a_winner(self.board)
                     # if white wins
-                    if result == 2:
-                        print("white wins")
+                    if result:
+                        print(winner, "wins")
                         self.restart()
                     '''
                     else:
