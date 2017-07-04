@@ -10,7 +10,7 @@ class PController(QMainWindow):
         super(PController, self).__init__()
         self.MainView = QGraphicsView()
         self.current_model = None
-        self.setGeometry(700,700,700,700)
+        self.setGeometry(500,200,700,700)
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
 
@@ -46,5 +46,6 @@ class PController(QMainWindow):
         pass
         if model_code == 3:
             self.load_start_menu()
+            print("get signal 3")
         pass
 
