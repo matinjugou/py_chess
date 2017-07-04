@@ -10,12 +10,10 @@ class PController(QMainWindow):
         super(PController, self).__init__()
         self.MainView = QGraphicsView()
         self.current_model = None
-        self.setGeometry(700,700,700,700)
+        self.setGeometry(500,200,700,700)
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
 
-        #only for test, to delete later
-        #new_game = PStartMenu()
         self.load_start_menu()
 
         pass
@@ -27,13 +25,14 @@ class PController(QMainWindow):
 
     def load_single_model(self):
         self.current_model = PSingleModel()
-
+        self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
     def load_multiple_model(self):
         self.current_model = PMultipleModel()
-
+        self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
+
 
     @pyqtSlot(int, name = "ChangeModel")
     def ChangeModel(self, model_code):
@@ -47,5 +46,6 @@ class PController(QMainWindow):
         pass
         if model_code == 3:
             self.load_start_menu()
+            print("get signal 3")
         pass
 

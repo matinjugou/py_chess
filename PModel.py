@@ -7,6 +7,7 @@ from random import choice
 from math import log, sqrt
 
 
+
 class PModel(QGraphicsScene):
     def __init__(self, parent = None):
         super(PModel, self).__init__(parent)
@@ -46,7 +47,6 @@ class PStartMenu(PModel):
                 self.Signal_ChangeModel.emit(1)
             pass
 
-
 class PMultipleModel(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
@@ -64,6 +64,9 @@ class PMultipleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
+        # return label
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,0)
         '''
         TODO:trans it into current framework
         self.black_chess_cursor = QCursor(QPixmap("blackpiece.bmp"))
@@ -72,6 +75,7 @@ class PMultipleModel(PModel):
         '''
 
         self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
         pass
 
     # restart
@@ -81,8 +85,11 @@ class PMultipleModel(PModel):
         self.num_pieces = 0
         self.clear()
         self.chessboard = PChessBoard()
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
         self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
 
     # mouse press event
     def mousePressEvent(self, event):
@@ -90,6 +97,9 @@ class PMultipleModel(PModel):
         print(event.scenePos())
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
+            # if one the return button
+            if event.scenePos().x() >= 540 and event.scenePos().x() <= 690 and event.scenePos().y() <= 70  and event.scenePos().y() >= 0:
+                self.Signal_ChangeModel.emit(3)
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
                 temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
@@ -182,6 +192,8 @@ class Board(object):
 # temporarily, we rule it that AI go first using white chessman
 # TODO:add a function by which player can choose that AI go first
 class PSingleModel(PModel):
+    Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
+
     def __init__(self, single_move_time=5, max_actions = 1000, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
@@ -205,7 +217,12 @@ class PSingleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
+        # return label
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,0)
+
         self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
 
         # some uct arguments
         self.plays = {}
@@ -383,6 +400,9 @@ class PSingleModel(PModel):
         print(event.scenePos())
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
+            # if one the return button
+            if event.scenePos().x() >= 540 and event.scenePos().x() <= 690 and event.scenePos().y() <= 70  and event.scenePos().y() >= 0:
+                self.Signal_ChangeModel.emit(3)
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
                 temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
