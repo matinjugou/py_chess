@@ -3,6 +3,8 @@ from collections import deque
 from PStartMenuView import *
 import time as time
 import copy as copy
+from random import choice, shuffle
+from math import log, sqrt
 
 PLAYER_WIN_PROFIT = 100
 AI_WIN_PROFIT = -100
@@ -15,40 +17,14 @@ class PModel(QGraphicsScene):
     pass
 
 
-
-class PSingleModel(PModel):
-
-    def __init__(self, parent:PModel = None):
-        super(PSingleModel, self).__init__()
-        self.scene = QGraphicsScene()
-        self.chessboard = PChessBoard()
-
-        self.chessboard.setPos(0, 0)
-        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
-
-        # stack for black piece and white chess
-        self.black_chessman_queue = deque()
-        self.white_chessman_queue = deque()
-
-        # some argument for a play
-        self.num_pieces = 0
-
-        self.addItem(self.chessboard)
-        pass
-
-
-'''
-
 class PStartMenu(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
     def __init__(self, parent = None):
         super(PStartMenu, self).__init__(parent)
-        ##TODO:create a startmenu including single player and multiple player
+        # TODO:create a startmenu including single player and multiple player
         self.startMenu = PStartMenuBackGround()
         self.startMenu.setPos(0,0)
-
-
 
         # multiple label
         self.multipleLabel = PStartMenu_Multiple()
@@ -63,17 +39,15 @@ class PStartMenu(PModel):
         self.addItem(self.machineLabel)
         self.addItem(self.multipleLabel)
     pass
-'''
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent'):
         print(event.scenePos().x(),event.scenePos().y())
-        if event.scenePos().x() >= 400 and event.scenePos().x() <= 680:
-            if event.scenePos().y() >= 30 and event.scenePos().y() <= 110:
+        if 400.0 <= event.scenePos().x() <= 680.0:
+            if 30.0 <= event.scenePos().y() <= 110.0:
                 self.Signal_ChangeModel.emit(2)
-            elif event.scenePos().y() >= 120 and event.scenePos().y() <= 200:
+            elif 120.0 <= event.scenePos().y() <= 200.0:
                 self.Signal_ChangeModel.emit(1)
-            else:
-                pass
+            pass
 
 
 class PMultipleModel(PModel):
@@ -169,12 +143,45 @@ class PMultipleModel(PModel):
             pass
 
 
+class Board(object):
+    """
+    board for game
+    """
+
+    def __init__(self):
+        self.width = 15
+        self.height = 15
+        self.states = {} # board states, key:(player, move), value: piece type
+        self.n_in_row = 5 # need how many pieces in a row to win
+        self.available = list(range(self.width * self.height)) # available moves
+        for m in self.available:
+            self.states[m] = -1
+        pass
+
+    def move_to_location(self, move):
+        h = move // self.width
+        w = move % self.width
+        return [h, w]
+
+    def location_to_move(self, location):
+        if len(location) != 2:
+            return -1
+        h = location[0]
+        w = location[1]
+        move = h * self.width + w
+        if move not in range(225):
+            return -1
+        return move
+
+    def update(self, player, move):
+        self.states[move] = player
+        self.available.remove(move)
+
+
 # the model in which people play with AI.
 # temporarily, we rule it that AI go first using white chessman
 # TODO:add a function by which player can choose that AI go first
 class PSingleModel(PModel):
-    a = pyqtSignal(int, name = "a")
-    a.emit(5)
     def __init__(self, single_move_time=5, max_actions = 1000, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
@@ -185,7 +192,7 @@ class PSingleModel(PModel):
         # chessman, 2 standing for white
         # TODO:change the 2 dimensions chessboard into 1 dimension totally to lessen search time
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
-        self.available = [0 for i in range(255)]
+        self.available = list(range(225))
 
         # stack for black pie/ce and white chess
         self.black_chessman_queue = deque()
@@ -198,14 +205,18 @@ class PSingleModel(PModel):
         self.addItem(self.chessboard)
 
         # some uct arguments
-        self.uct_root = Node()
-        self.uct_current_root = self.uct_root
-        self.uct_calculation_time = float(single_move_time)
-        self.max_actions = max_actions
-        self.confident = 1.96
         self.plays = {}
         self.wins = {}
+        self.plays_rave = {}
+        self.wins_rave = {}
+
+        self.board = Board()
+        self.calculation_time = float(single_move_time)
+        self.max_actions = max_actions
+        self.confident = 1.96
         self.max_depth = 1
+        self.equivalence = 10000
+        self.state = [0 for i in range(225)]
         pass
 
     def full(self):
@@ -225,99 +236,97 @@ class PSingleModel(PModel):
     def get_action(self):
         next_move_x = 0
         next_move_y = 0
-        count, empty_pos = self.full()
-        if count == 1:
-            return empty_pos
+        if len(self.board.available) == 1:
+            return self.board.move_to_location(self.board.available[0])
         self.plays = {}
         self.wins = {}
+        self.plays_rave = {}
+        self.wins_rave = {}
         simulations = 0
         begin = time.time()
-        while time.time() - begin < self.uct_calculation_time:
-            board_copy = copy.deepcopy(self.situation_matrix)
-            play_turn_copy = copy.deepcopy(self.num_pieces)
-            self.run_simulation(board_copy, play_turn_copy)
+        while time.time() - begin < self.calculation_time:
+            board_copy = copy.deepcopy(self.board)
+            self.run_simulation(board_copy, self.num_pieces)
             simulations += 1
         return next_move_x, next_move_y
 
     # TODO:Trans these codes into my framework
 
-    def run_simulation(self, board, play_turn):
-        """
-        MCTS main process
-        """
-
+    def run_simulation(self, board, player):
         plays = self.plays
         wins = self.wins
-        availables = board.availables
 
-        player = self.get_player(play_turn)  # 获取当前出手的玩家
-        visited_states = set()  # 记录当前路径上的全部着法
-        winner = -1
         expand = True
-
+        visited_states = set()
+        winner = -1
+        plays_rave = self.plays_rave
+        wins_rave = self.wins_rave
+        available = board.available
+        
         # Simulation
         for t in range(1, self.max_actions + 1):
-            # Selection
-            # 如果所有着法都有统计信息，则获取UCB最大的着法
-            if all(plays.get((player, move)) for move in availables):
-                log_total = log(
-                    sum(plays[(player, move)] for move in availables))
+            if all(plays.get((player, move)) for move in available):
                 value, move = max(
-                    ((wins[(player, move)] / plays[(player, move)]) +
-                     sqrt(self.confident * log_total / plays[(player, move)]), move)
-                    for move in availables)
+                    ((1 - sqrt(self.equivalence / (3 * plays_rave[move] + self.equivalence))) * (
+                    wins[(player, move)] / plays[(player, move)]) +
+                     sqrt(self.equivalence / (3 * plays_rave[move] + self.equivalence)) * (
+                     wins_rave[move][player] / plays_rave[move]) +
+                     sqrt(self.confident * log(plays_rave[move]) / plays[(player, move)]), move)
+                    for move in available)  # UCT RAVE  公式: (1-beta)*MC + beta*AMAF + UCB
             else:
-                # 否则随机选择一个着法
-                move = choice(availables)
+                adjacents = []
+                if len(available) > 5:
+                    adjacents = self.adjacent_moves(board, player, plays)
+
+                if len(adjacents):
+                    move = choice(adjacents)
+                else:
+                    peripherals = []
+                    for move in available:
+                        if not plays.get((player, move)):
+                            peripherals.append(move)
+                    move = choice(peripherals)
 
             board.update(player, move)
 
-            # Expand
-            # 每次模拟最多扩展一次，每次扩展只增加一个着法
-            if expand and (player, move) not in plays:
+            #Expand
+            if expand and (player,move) not in plays:
                 expand = False
                 plays[(player, move)] = 0
                 wins[(player, move)] = 0
+                if move not in plays_rave:
+                    plays_rave[move] = 0
+                if move in wins_rave:
+                    wins_rave[move][player] = 0
+                else:
+                    wins_rave[move] = {player : 0}
                 if t > self.max_depth:
                     self.max_depth = t
 
             visited_states.add((player, move))
 
-            is_full = not len(availables)
+            is_full = not len(available)
             win, winner = self.has_a_winner(board)
-            if is_full or win:  # 游戏结束，没有落子位置或有玩家获胜
+            if is_full or win:
                 break
-
-            player = self.get_player(play_turn)
 
         # Back-propagation
         for player, move in visited_states:
-            if (player, move) not in plays:
-                continue
-            plays[(player, move)] += 1  # 当前路径上所有着法的模拟次数加1
-            if player == winner:
-                wins[(player, move)] += 1  # 获胜玩家的所有着法的胜利次数加1
+            if (player, move) in plays:
+                plays[(player, move)] += 1
+                if player == winner:
+                    wins[(player, move)] += 1
+            if move in plays_rave:
+                plays_rave[move] += 1
+                if winner in wins_rave[move]:
+                    wins_rave[move][winner] += 1
 
-    def get_player(self, players):
-        p = players.pop(0)
-        players.append(p)
-        return p
 
-    def select_one_move(self):
-        percent_wins, move = max(
-            (self.wins.get((self.player, move), 0) /
-             self.plays.get((self.player, move), 1),
-             move)
-            for move in self.board.availables)  # 选择胜率最高的着法
-
-        return move
+        pass
 
     def has_a_winner(self, board):
-        """
-        检查是否有玩家获胜
-        """
         moved = list(set(range(board.width * board.height)) - set(board.availables))
-        if (len(moved) < self.n_in_row + 2):
+        if len(moved) < 5 + 2:
             return False, -1
 
         width = board.width
@@ -330,27 +339,54 @@ class PSingleModel(PModel):
             player = states[m]
 
             if (w in range(width - n + 1) and
-                        len(set(states[i] for i in range(m, m + n))) == 1):  # 横向连成一线
+                        len(set(states[i] for i in range(m, m + n))) == 1):
                 return True, player
 
             if (h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * width, width))) == 1):  # 竖向连成一线
+                        len(set(states[i] for i in range(m, m + n * width, width))) == 1):
                 return True, player
 
             if (w in range(width - n + 1) and h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):  # 右斜向上连成一线
+                        len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):
                 return True, player
 
             if (w in range(n - 1, width) and h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):  # 左斜向下连成一线
+                        len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):
                 return True, player
 
         return False, -1
 
-    def __str__(self):
-        return "AI"
+    def adjacent_moves(self, board, player, plays):
+        moved = list(set(range(225)) - set(board.available))
+        adjacents = set()
+        width = 15
+        height = 15
 
+        for m in moved:
+            h = m // width
+            w = m % width
+            if w < width - 1:
+                adjacents.add(m + 1)  # right
+            if w > 0:
+                adjacents.add(m - 1)  # left
+            if h < height - 1:
+                adjacents.add(m + width)  # upper
+            if h > 0:
+                adjacents.add(m - width)  # lower
+            if w < width - 1 and h < height - 1:
+                adjacents.add(m + width + 1)  # upper right
+            if w > 0 and h < height - 1:
+                adjacents.add(m + width - 1)  # upper left
+            if w < width - 1 and h > 0:
+                adjacents.add(m - width + 1)  # lower right
+            if w > 0 and h > 0:
+                adjacents.add(m - width - 1)  # lower left
 
+        adjacents = list(set(adjacents) - set(moved))
+        for move in adjacents:
+            if plays.get((player, move)):
+                adjacents.remove(move)
+        return adjacents
 
 
     # mouse press event
@@ -411,16 +447,6 @@ class PSingleModel(PModel):
                         self.setCursor(self.black_chess_cursor)
                     '''
             pass
-
-
-
-class Node:
-    def __init__(self):
-        self.choice = (0, 0)
-        self.visitedNum = 0
-        self.fatherNode = None
-        self.children = []
-    pass
 
 
 # check win for black piece
