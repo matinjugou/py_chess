@@ -10,7 +10,7 @@ class PStartMenuBackGround(QGraphicsPixmapItem):
         super().__init__()
 
         # menu visual
-        self.pic_startMenu =  QPixmap("resources//pic//startMenu.jpg")
+        self.pic_startMenu = QPixmap("resources//pic//startMenu.jpg")
         self.setPixmap(self.pic_startMenu)
 
 
@@ -18,7 +18,6 @@ class PStartMenuBackGround(QGraphicsPixmapItem):
 class PStartMenu_Multiple(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
-
 
         # multiple label
         self.pic_multiple_1 = QPixmap("resources//pic//multiple1.png")

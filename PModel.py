@@ -84,6 +84,7 @@ class PMultipleModel(PModel):
         self.chessboard = PChessBoard()
         self.returnLabel = PReturn()
         self.square = PSquare()
+        self.square.hide()
         self.returnLabel.setPos(540,0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
         self.addItem(self.chessboard)
@@ -102,12 +103,15 @@ class PMultipleModel(PModel):
                             + 0.25 * self.chessboard.space) / self.chessboard.space)
             # that space has not been set piece
             if self.situation_matrix[temp_row][temp_col] == 0:
+                self.square.show()
                 if self.num_pieces % 2 == 0:
                     self.square.setPixmap(self.square.pic_square_black)
                 else:
                     self.square.setPixmap(self.square.pic_square_white)
                 self.square.setPos(self.chessboard.space
                                    * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
+            else:
+                self.square.hide()
 
 
     # mouse press event
@@ -209,7 +213,7 @@ class Board(object):
 class PSingleModel(PModel):
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
 
-    def __init__(self, single_move_time=5, max_actions = 1000, parent:PModel = None):
+    def __init__(self, single_move_time=2, max_actions = 1000, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
         self.chessboard = PChessBoard()
@@ -232,12 +236,16 @@ class PSingleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
+        # cursor square
+        self.square = PSquare()
+
         # return label
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540,0)
 
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
+        self.addItem(self.square)
 
         # some uct arguments
         self.plays = {}
@@ -341,6 +349,7 @@ class PSingleModel(PModel):
             if is_full or win:
                 break
 
+            player = (player + 1) % 2
         # Back-propagation
         for player, move in visited_states:
             if (player, move) in plays:
@@ -424,6 +433,24 @@ class PSingleModel(PModel):
             if plays.get((player, move)):
                 adjacent.remove(move)
         return adjacent
+
+    # mouse move event
+    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
+        super(PSingleModel, self).mousePressEvent(event)
+        # if on the chess board
+        if self.chessboard.left_up_x - 20.0 <= event.scenePos().x() <= self.chessboard.right_down_x + 20.0 \
+                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0:
+            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            # that space has not been set piece
+            if (15 * temp_row + temp_col) in self.board.available:
+                self.square.show()
+                self.square.setPos(self.chessboard.space
+                                   * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
+            else:
+                self.square.hide()
 
     # mouse press event
     def mousePressEvent(self, event):

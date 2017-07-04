@@ -3,32 +3,36 @@ import sys
 from PModel import *
 from PStartMenuView import *
 from PyQt5.QtWidgets import *
-
+from PyQt5 import QtCore
 
 class PController(QMainWindow):
     def __init__(self):
         super(PController, self).__init__()
         self.MainView = QGraphicsView()
+        self.setFixedSize(700, 672)
         self.current_model = None
-        self.setGeometry(500,200,700,700)
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
-
+        self.MainView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.MainView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.load_start_menu()
 
         pass
 
     def load_start_menu(self):
+        self.setFixedSize(700, 672)
         self.current_model = PStartMenu()
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
     def load_single_model(self):
+        self.setFixedSize(700, 533)
         self.current_model = PSingleModel()
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
     def load_multiple_model(self):
+        self.setFixedSize(700, 533)
         self.current_model = PMultipleModel()
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
