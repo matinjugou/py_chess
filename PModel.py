@@ -3,12 +3,10 @@ from collections import deque
 from PStartMenuView import *
 import time as time
 import copy as copy
-from random import choice, shuffle
+from random import choice
 from math import log, sqrt
 
-PLAYER_WIN_PROFIT = 100
-AI_WIN_PROFIT = -100
-TIE_PROFIT = 0
+
 
 class PModel(QGraphicsScene):
     def __init__(self, parent = None):
@@ -19,6 +17,7 @@ class PModel(QGraphicsScene):
 class PStartMenu(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
+
     def __init__(self, parent = None):
         super(PStartMenu, self).__init__(parent)
         # TODO:create a startmenu including single player and multiple player
@@ -97,6 +96,7 @@ class PMultipleModel(PModel):
         super(PMultipleModel, self).mousePressEvent(event)
         print(event.scenePos())
         if event.button() == Qt.LeftButton:
+            print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
             if event.scenePos().x() >= 540 and event.scenePos().x() <= 690 and event.scenePos().y() <= 70  and event.scenePos().y() >= 0:
                 self.Signal_ChangeModel.emit(3)
@@ -203,16 +203,19 @@ class PSingleModel(PModel):
         # represent the statu of the chessboard, 0 standing for nothing, 1 standing for black
         # chessman, 2 standing for white
         # TODO:change the 2 dimensions chessboard into 1 dimension totally to lessen search time
-        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+
+
+
         self.available = list(range(225))
 
-        # stack for black pie/ce and white chess
-        self.black_chessman_queue = deque()
-        self.white_chessman_queue = deque()
+        # TODO:to dicide whether we need following statements
+        # stack for black chess and white chess
+        # self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+        # self.black_chessman_queue = deque()
+        # self.white_chessman_queue = deque()
 
         # some argument for a play
         self.num_pieces = 0
-        self.play_turn = []
 
         # return label
         self.returnLabel = PReturn()
@@ -236,18 +239,6 @@ class PSingleModel(PModel):
         self.state = [0 for i in range(225)]
         pass
 
-    def full(self):
-        count = 0
-        empty_pos = None
-        for i in range(15):
-            for j in range(15):
-                if self.situation_matrix[i][j] != 0:
-                    count += 1
-                    empty_pos = (i, j)
-                    if count >= 2:
-                        return 2,(0,0)
-        return count, empty_pos
-
     # Standard UCT functions
 
     def get_action(self):
@@ -263,7 +254,7 @@ class PSingleModel(PModel):
         begin = time.time()
         while time.time() - begin < self.calculation_time:
             board_copy = copy.deepcopy(self.board)
-            self.run_simulation(board_copy, self.num_pieces)
+            self.run_simulation(board_copy, self.num_pieces % 2)
             simulations += 1
         return next_move_x, next_move_y
 
@@ -291,12 +282,12 @@ class PSingleModel(PModel):
                      sqrt(self.confident * log(plays_rave[move]) / plays[(player, move)]), move)
                     for move in available)  # UCT RAVE  公式: (1-beta)*MC + beta*AMAF + UCB
             else:
-                adjacents = []
+                adjacent = []
                 if len(available) > 5:
-                    adjacents = self.adjacent_moves(board, player, plays)
+                    adjacent = self.adjacent_moves(board, player, plays)
 
-                if len(adjacents):
-                    move = choice(adjacents)
+                if len(adjacent):
+                    move = choice(adjacent)
                 else:
                     peripherals = []
                     for move in available:
@@ -306,8 +297,8 @@ class PSingleModel(PModel):
 
             board.update(player, move)
 
-            #Expand
-            if expand and (player,move) not in plays:
+            # Expand
+            if expand and (player, move) not in plays:
                 expand = False
                 plays[(player, move)] = 0
                 wins[(player, move)] = 0
@@ -337,12 +328,10 @@ class PSingleModel(PModel):
                 plays_rave[move] += 1
                 if winner in wins_rave[move]:
                     wins_rave[move][winner] += 1
-
-
         pass
 
     def has_a_winner(self, board):
-        moved = list(set(range(board.width * board.height)) - set(board.availables))
+        moved = list(set(range(board.width * board.height)) - set(board.available))
         if len(moved) < 5 + 2:
             return False, -1
 
@@ -375,7 +364,7 @@ class PSingleModel(PModel):
 
     def adjacent_moves(self, board, player, plays):
         moved = list(set(range(225)) - set(board.available))
-        adjacents = set()
+        adjacent = set()
         width = 15
         height = 15
 
@@ -383,32 +372,32 @@ class PSingleModel(PModel):
             h = m // width
             w = m % width
             if w < width - 1:
-                adjacents.add(m + 1)  # right
+                adjacent.add(m + 1)  # right
             if w > 0:
-                adjacents.add(m - 1)  # left
+                adjacent.add(m - 1)  # left
             if h < height - 1:
-                adjacents.add(m + width)  # upper
+                adjacent.add(m + width)  # upper
             if h > 0:
-                adjacents.add(m - width)  # lower
+                adjacent.add(m - width)  # lower
             if w < width - 1 and h < height - 1:
-                adjacents.add(m + width + 1)  # upper right
+                adjacent.add(m + width + 1)  # upper right
             if w > 0 and h < height - 1:
-                adjacents.add(m + width - 1)  # upper left
+                adjacent.add(m + width - 1)  # upper left
             if w < width - 1 and h > 0:
-                adjacents.add(m - width + 1)  # lower right
+                adjacent.add(m - width + 1)  # lower right
             if w > 0 and h > 0:
-                adjacents.add(m - width - 1)  # lower left
+                adjacent.add(m - width - 1)  # lower left
 
-        adjacents = list(set(adjacents) - set(moved))
-        for move in adjacents:
+        adjacent = list(set(adjacent) - set(moved))
+        for move in adjacent:
             if plays.get((player, move)):
-                adjacents.remove(move)
-        return adjacents
-
+                adjacent.remove(move)
+        return adjacent
 
     # mouse press event
     def mousePressEvent(self, event):
         super(PSingleModel, self).mousePressEvent(event)
+        print(event.scenePos())
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
