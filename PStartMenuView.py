@@ -10,7 +10,7 @@ class PStartMenuBackGround(QGraphicsPixmapItem):
         super().__init__()
 
         # menu visual
-        self.pic_startMenu =  QPixmap("resources//pic//startMenu.jpg")
+        self.pic_startMenu = QPixmap("resources//pic//startMenu.jpg")
         self.setPixmap(self.pic_startMenu)
 
 

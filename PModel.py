@@ -209,7 +209,7 @@ class Board(object):
 class PSingleModel(PModel):
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
 
-    def __init__(self, single_move_time=5, max_actions = 1000, parent:PModel = None):
+    def __init__(self, single_move_time=2, max_actions = 1000, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
         self.chessboard = PChessBoard()
