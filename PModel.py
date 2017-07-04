@@ -63,19 +63,12 @@ class PMultipleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
-
         # return label
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540,0)
 
         # cursor square
         self.square = PSquare()
-        '''
-        TODO:trans it into current framework
-        self.black_chess_cursor = QCursor(QPixmap("blackpiece.bmp"))
-        self.white_chess_cursor = QCursor(QPixmap("whitepiece.bmp"))
-        self.setCursor(self.black_chess_cursor)
-        '''
 
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
@@ -153,11 +146,7 @@ class PMultipleModel(PModel):
                         if result == 1:
                             print("black wins")
                             self.restart()
-                        '''
-                        else:
-                            # change the cursor
-                            self.setCursor(self.white_chess_cursor)
-                        '''
+
 
                     else:
                         self.num_pieces += 1
@@ -175,10 +164,7 @@ class PMultipleModel(PModel):
                         if result == 2:
                             print("white wins")
                             self.restart()
-                        '''
-                        else:
-                            self.setCursor(self.black_chess_cursor)
-                        '''
+
             pass
 
 
@@ -472,11 +458,7 @@ class PSingleModel(PModel):
                     if result:
                         print(winner, "wins")
                         self.restart()
-                    '''
-                    else:
-                        # change the cursor
-                        self.setCursor(self.white_chess_cursor)
-                    '''
+
 
                     # AI's turn
                     self.num_pieces += 1
@@ -498,10 +480,7 @@ class PSingleModel(PModel):
                     if result:
                         print(winner, "wins")
                         self.restart()
-                    '''
-                    else:
-                        self.setCursor(self.black_chess_cursor)
-                    '''
+
             pass
 
 
