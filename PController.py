@@ -14,8 +14,6 @@ class PController(QMainWindow):
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
 
-        #only for test, to delete later
-        #new_game = PStartMenu()
         self.load_start_menu()
 
         pass
@@ -27,13 +25,14 @@ class PController(QMainWindow):
 
     def load_single_model(self):
         self.current_model = PSingleModel()
-
+        self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
     def load_multiple_model(self):
         self.current_model = PMultipleModel()
-
+        self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
+
 
     @pyqtSlot(int, name = "ChangeModel")
     def ChangeModel(self, model_code):

@@ -8,73 +8,10 @@ PLAYER_WIN_PROFIT = 100
 AI_WIN_PROFIT = -100
 TIE_PROFIT = 0
 
-
 class PModel(QGraphicsScene):
     def __init__(self, parent = None):
         super(PModel, self).__init__(parent)
     pass
-
-
-
-class PSingleModel(PModel):
-
-    def __init__(self, parent:PModel = None):
-        super(PSingleModel, self).__init__()
-        self.scene = QGraphicsScene()
-        self.chessboard = PChessBoard()
-
-        self.chessboard.setPos(0, 0)
-        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
-
-        # stack for black piece and white chess
-        self.black_chessman_queue = deque()
-        self.white_chessman_queue = deque()
-
-        # some argument for a play
-        self.num_pieces = 0
-
-        self.addItem(self.chessboard)
-        pass
-
-
-'''
-
-class PStartMenu(PModel):
-    # signal to emit
-    Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
-    def __init__(self, parent = None):
-        super(PStartMenu, self).__init__(parent)
-        ##TODO:create a startmenu including single player and multiple player
-        self.startMenu = PStartMenuBackGround()
-        self.startMenu.setPos(0,0)
-
-
-
-        # multiple label
-        self.multipleLabel = PStartMenu_Multiple()
-        self.multipleLabel.setPos(400,30)
-
-        # machine label
-        self.machineLabel = PStartMenu_Machine()
-        self.machineLabel.setPos(400,120)
-        
-        # add the item
-        self.addItem(self.startMenu)
-        self.addItem(self.machineLabel)
-        self.addItem(self.multipleLabel)
-    pass
-'''
-
-    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent'):
-        print(event.scenePos().x(),event.scenePos().y())
-        if event.scenePos().x() >= 400 and event.scenePos().x() <= 680:
-            if event.scenePos().y() >= 30 and event.scenePos().y() <= 110:
-                self.Signal_ChangeModel.emit(2)
-            elif event.scenePos().y() >= 120 and event.scenePos().y() <= 200:
-                self.Signal_ChangeModel.emit(1)
-            else:
-                pass
-
 
 class PMultipleModel(PModel):
     def __init__(self, parent = None):
@@ -173,8 +110,7 @@ class PMultipleModel(PModel):
 # temporarily, we rule it that AI go first using white chessman
 # TODO:add a function by which player can choose that AI go first
 class PSingleModel(PModel):
-    a = pyqtSignal(int, name = "a")
-    a.emit(5)
+
     def __init__(self, single_move_time=5, max_actions = 1000, parent:PModel = None):
         super(PSingleModel, self).__init__()
         self.scene = QGraphicsScene()
