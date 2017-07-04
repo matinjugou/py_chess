@@ -99,12 +99,16 @@ class PMultipleModel(PModel):
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
         super(PMultipleModel, self).mousePressEvent(event)
         # if on the chess board
-        if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
-            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x + 0.25 * self.chessboard.space) / self.chessboard.space)
-            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y + 0.25 * self.chessboard.space) / self.chessboard.space)
+        if self.chessboard.left_up_x - 20.0 <= event.scenePos().x() <= self.chessboard.right_down_x + 20.0 \
+                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0:
+            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
             # that space has not been set piece
             if self.situation_matrix[temp_row][temp_col] == 0:
-                self.square.setPos(self.chessboard.space * (temp_col + 1) - 30, self.chessboard.space * (temp_row + 1) - 30)
+                self.square.setPos(self.chessboard.space
+                                   * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
 
 
     # mouse press event
