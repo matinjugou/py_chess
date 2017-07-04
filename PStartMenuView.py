@@ -74,8 +74,9 @@ class PReturn(QGraphicsPixmapItem):
 class PSquare(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
-        self.pic_square = QPixmap("resources//pic//square_white.png")
-        self.setPixmap(self.pic_square)
+        self.pic_square_white = QPixmap("resources//pic//square_white.png")
+        self.pic_square_black = QPixmap("resources//pic//square_black.png")
+        self.setPixmap(self.pic_square_black)
 
         
 
