@@ -13,6 +13,7 @@ class PStartMenuBackGround(QGraphicsPixmapItem):
         self.pic_startMenu =  QPixmap("resources//pic//startMenu.jpg")
         self.setPixmap(self.pic_startMenu)
 
+
 # visual label of multiple model
 class PStartMenu_Multiple(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
