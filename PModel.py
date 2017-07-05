@@ -7,6 +7,7 @@ import numpy as np
 class PModel(QGraphicsScene):
     def __init__(self, parent: 'QGraphicsScene' = None):
         super(PModel, self).__init__(parent)
+        self.is_game_end = False
     pass
 
 
@@ -418,7 +419,7 @@ class PSingleModel(PModel):
     def mousePressEvent(self, event):
         super(PSingleModel, self).mousePressEvent(event)
         print(event.scenePos())
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and not self.is_game_end:
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
@@ -449,7 +450,7 @@ class PSingleModel(PModel):
                     # if black wins
                     if result:
                         print(winner, "wins")
-                        self.restart()
+                        self.game_end(1)
 
                     # AI's turn
                     self.num_pieces += 1
@@ -470,9 +471,17 @@ class PSingleModel(PModel):
                     # if white wins
                     if result:
                         print(winner, "wins")
-                        self.restart()
+                        self.game_end(2)
 
+        elif event.button() == Qt.LeftButton and self.is_game_end:
+            # TODO:deal with the things happend after game_end
             pass
+
+    def game_end(self, player):
+        # TODO:deal with all those things after a play
+        self.is_game_end = True
+        # TODO:to show or hide some items
+        pass
 
 
 # check win for black piece
