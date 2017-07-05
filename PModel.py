@@ -22,27 +22,32 @@ class PStartMenu(PModel):
 
         # multiple label
         self.multipleLabel = PStartMenu_Multiple()
-        self.multipleLabel.setPos(400, 30)
+        self.multipleLabel.setPos(400, 10)
 
         # machine label
         self.machineLabel = PStartMenu_Machine()
-        self.machineLabel.setPos(400, 120)
+        self.machineLabel.setPos(400, 80)
 
-
+        # online label
+        self.onlineLabel = PStartMenu_Online()
+        self.onlineLabel.setPos(385,150)
         
         # add the item
         self.addItem(self.startMenu)
         self.addItem(self.machineLabel)
         self.addItem(self.multipleLabel)
+        self.addItem(self.onlineLabel)
     pass
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent'):
         print(event.scenePos().x(),event.scenePos().y())
-        if 400.0 <= event.scenePos().x() <= 680.0:
-            if 30.0 <= event.scenePos().y() <= 110.0:
+        if 385.0 <= event.scenePos().x() <= 680.0:
+            if 10.0 <= event.scenePos().y() <= 80.0:
                 self.Signal_ChangeModel.emit(2)
-            elif 120.0 <= event.scenePos().y() <= 200.0:
-                self.Signal_ChangeModel.emit(1)
+            elif 80.0 <= event.scenePos().y() <= 150.0:
+                self.Signal_ChangeModel.emit(3)
+            elif 150 <= event.scenePos().y() <= 220:
+                self.Signal_ChangeModel.emit(4)
             pass
 
 
@@ -138,7 +143,7 @@ class PMultipleModel(PModel):
     # undo label
     def Undo(self):
         if self.num_pieces > 0:
-            
+
             # if black just set a chessman
             if  self.num_pieces % 2 == 1:
                 temp_row, temp_col = self.black_chessman_queue[-1].index_pos
@@ -164,7 +169,7 @@ class PMultipleModel(PModel):
 
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
-                self.Signal_ChangeModel.emit(3)
+                self.Signal_ChangeModel.emit(1)
 
             # if on the undo button
             if 540 <= event.scenePos().x() <= 690 and 380 <= event.scenePos().y() <= 440:
@@ -496,9 +501,11 @@ class PSingleModel(PModel):
         print(event.scenePos())
         if event.button() == Qt.LeftButton :
             print(event.scenePos().x(), event.scenePos().y())
+
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
-                self.Signal_ChangeModel.emit(3)
+                self.Signal_ChangeModel.emit(1)
+
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
                     and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
@@ -568,6 +575,17 @@ class PSingleModel(PModel):
             self.restart()
         else:
             self.restart()
+
+# online model
+class POnlineModel(PModel):
+    Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
+    # init function
+    def __init__(self, single_move_time=5, max_actions=1000, parent: PModel = None):
+        super(POnlineModel, self).__init__()
+        # init UI
+        # main scene
+        self.scene = QGraphicsScene()
+        # main chess board
 
 
 # check win for black piece

@@ -52,6 +52,24 @@ class PStartMenu_Machine(QGraphicsPixmapItem):
         self.setPixmap(self.pic_machine_1)
         return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
 
+class PStartMenu_Online(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        # online label
+        self.pic_online_1 = QPixmap("resources//pic//online_1.png")
+        self.pic_online_2 = QPixmap("resources//pic//online_2.png")
+        self.setAcceptHoverEvents(True)
+        self.setPixmap(self.pic_online_1)
+
+    def hoverEnterEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_online_2)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+    def hoverLeaveEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_online_1)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+
 
 class PReturn(QGraphicsPixmapItem):
 
