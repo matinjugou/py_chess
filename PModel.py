@@ -393,6 +393,24 @@ class PSingleModel(PModel):
 
         return False, -1
 
+    # mouse move event
+    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
+        super(PSingleModel, self).mousePressEvent(event)
+        # if on the chess board
+        if self.chessboard.left_up_x - 20.0 <= event.scenePos().x() <= self.chessboard.right_down_x + 20.0 \
+                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0:
+            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            # that space has not been set piece
+            if (15 * temp_row + temp_col) in self.board.available:
+                self.square.show()
+                self.square.setPos(self.chessboard.space
+                                   * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
+            else:
+                self.square.hide()
+
     # mouse press event
     def mousePressEvent(self, event):
         super(PSingleModel, self).mousePressEvent(event)
