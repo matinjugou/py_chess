@@ -11,10 +11,9 @@ import threading
 class PModel(QGraphicsScene):
     def __init__(self, parent: 'QGraphicsScene' = None):
         super(PModel, self).__init__(parent)
-        self.is_game_end = False
     pass
 
-
+# start menu
 class PStartMenu(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
@@ -24,39 +23,42 @@ class PStartMenu(PModel):
         self.startMenu = PStartMenuBackGround()
         self.startMenu.setPos(0, 0)
 
+
         # multiple label
         self.multipleLabel = PStartMenu_Multiple()
-        self.multipleLabel.setPos(400, 30)
+        self.multipleLabel.setPos(400, 10)
 
         # machine label
         self.machineLabel = PStartMenu_Machine()
-        self.machineLabel.setPos(400, 120)
 
-        # net label
-        self.netLabel = PStartMenu_Net()
-        self.netLabel.setPos(400, 210)
+        self.machineLabel.setPos(400, 80)
+
+        # online label
+        self.onlineLabel = PStartMenu_Online()
+        self.onlineLabel.setPos(385,150)
         
         # add the item
         self.addItem(self.startMenu)
         self.addItem(self.machineLabel)
         self.addItem(self.multipleLabel)
-        self.addItem(self.netLabel)
+
+        self.addItem(self.onlineLabel)
     pass
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent'):
         print(event.scenePos().x(),event.scenePos().y())
-        if 400.0 <= event.scenePos().x() <= 680.0:
-            if 30.0 <= event.scenePos().y() <= 110.0:
+        if 385.0 <= event.scenePos().x() <= 680.0:
+            if 10.0 <= event.scenePos().y() <= 80.0:
                 self.Signal_ChangeModel.emit(2)
-            elif 120.0 <= event.scenePos().y() <= 200.0:
-                self.Signal_ChangeModel.emit(1)
-            elif 210.0 <= event.scenePos().y() <= 280.0:
+            elif 80.0 <= event.scenePos().y() <= 150.0:
+                self.Signal_ChangeModel.emit(3)
+            elif 150 <= event.scenePos().y() <= 220:
                 self.Signal_ChangeModel.emit(4)
             pass
 
 
 class PMultipleModel(PModel):
-    # signal to emit
+     #signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
 
     def __init__(self, parent = None):
@@ -64,6 +66,9 @@ class PMultipleModel(PModel):
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
+
 
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
@@ -74,13 +79,19 @@ class PMultipleModel(PModel):
 
         # return label
         self.returnLabel = PReturn()
-        self.returnLabel.setPos(540,0)
+        self.returnLabel.setPos(540,450)
 
         # cursor square
         self.square = PSquare()
 
+        # undo label
+        self.undoLabel = PUndo()
+        self.undoLabel.setPos(540,380)
+
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
+        self.addItem(self.undoLabel)
         self.addItem(self.square)
         pass
 
@@ -90,15 +101,28 @@ class PMultipleModel(PModel):
         self.white_chessman_queue.clear()
         self.num_pieces = 0
         self.clear()
+        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+
         self.chessboard = PChessBoard()
+
         self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,450)
+
         self.square = PSquare()
         self.square.hide()
-        self.returnLabel.setPos(540,0)
-        self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
+
+        # undo label
+        self.undoLabel = PUndo()
+        self.undoLabel.setPos(540,380)
+
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
+        self.addItem(self.undoLabel)
 
     # mouse move event
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
@@ -122,15 +146,41 @@ class PMultipleModel(PModel):
             else:
                 self.square.hide()
 
+    # undo label
+    def Undo(self):
+        if self.num_pieces > 0:
+
+            # if black just set a chessman
+            if  self.num_pieces % 2 == 1:
+                temp_row, temp_col = self.black_chessman_queue[-1].index_pos
+                print('{},{}'.format(temp_row, temp_col))
+                self.removeItem(self.black_chessman_queue.pop())
+                self.situation_matrix[temp_row][temp_col] = 0
+                self.num_pieces -= 1
+            # if white just set a chessman
+            else:
+                temp_row , temp_col = self.white_chessman_queue[-1].index_pos
+                print('{},{}'.format(temp_row, temp_col))
+                self.removeItem(self.white_chessman_queue.pop())
+                self.situation_matrix[temp_row][temp_col] = 0
+                self.num_pieces -= 1
+
+
     # mouse press event
     def mousePressEvent(self, event):
         super(PMultipleModel, self).mousePressEvent(event)
         print(event.scenePos())
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
+
             # if one the return button
-            if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
-                self.Signal_ChangeModel.emit(3)
+            if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
+                self.Signal_ChangeModel.emit(1)
+
+            # if on the undo button
+            if 540 <= event.scenePos().x() <= 690 and 380 <= event.scenePos().y() <= 440:
+                self.Undo()
+
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20\
                     and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
@@ -145,11 +195,11 @@ class PMultipleModel(PModel):
                         self.num_pieces += 1
                         self.situation_matrix[temp_row][temp_col] = 1
                         temp_black_chessman = BlackChessMan(self)
-                        temp_black_chessman.set_index_pos(temp_col, temp_row)
+                        temp_black_chessman.set_index_pos(temp_row, temp_col)
                         temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
                                                     self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
 
-                        print("black_chess_index_pos (%d, %d)" %(temp_col, temp_row))
+                        print("black_chess_index_pos (%d, %d)" %(temp_row, temp_col))
                         self.addItem(temp_black_chessman)
                         self.black_chessman_queue.append(temp_black_chessman)
                         # check for win
@@ -157,16 +207,16 @@ class PMultipleModel(PModel):
                         # if black wins
                         if result == 1:
                             print("black wins")
-                            self.restart()
+                            self.end_game(player = 1)
 
                     else:
                         self.num_pieces += 1
                         self.situation_matrix[temp_row][temp_col] = 2
                         temp_white_chessman = WhiteChessMan(self)
-                        temp_white_chessman.set_index_pos(temp_col, temp_row)
+                        temp_white_chessman.set_index_pos(temp_row, temp_col)
                         temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
                                                     self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
-                        print("while_chess_index_pos (%d, %d)" %(temp_col, temp_row))
+                        print("while_chess_index_pos (%d, %d)" %(temp_row, temp_col))
                         self.addItem(temp_white_chessman)
                         self.white_chessman_queue.append(temp_white_chessman)
                         # check for win
@@ -174,9 +224,30 @@ class PMultipleModel(PModel):
                         # if white wins
                         if result == 2:
                             print("white wins")
-                            self.restart()
+                            self.end_game(player = 2)
 
             pass
+
+    # win notification
+    def end_game(self,player):
+        # black wins
+        if player == 1:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("黑方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+        # white wins
+        else:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("白方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+
+        if button == QMessageBox.Ok:
+            self.restart()
+        else:
+            self.restart()
+
 
 
 class Board(object):
@@ -229,11 +300,15 @@ class PSingleModel(PModel):
         # main chess board
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
+        #picture supplement
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
         # cursor square
         self.square = PSquare()
         # return label
         self.returnLabel = PReturn()
-        self.returnLabel.setPos(540, 0)
+        self.returnLabel.setPos(540, 450)
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -393,9 +468,12 @@ class PSingleModel(PModel):
         self.board = Board()
         self.chessboard = PChessBoard()
         self.returnLabel = PReturn()
+        self.returnLabel.setPos(540, 450)
         self.square = PSquare()
         self.square.hide()
-        self.returnLabel.setPos(540, 0)
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -457,11 +535,13 @@ class PSingleModel(PModel):
     def mousePressEvent(self, event):
         super(PSingleModel, self).mousePressEvent(event)
         print(event.scenePos())
-        if event.button() == Qt.LeftButton and not self.is_game_end:
+        if event.button() == Qt.LeftButton :
             print(event.scenePos().x(), event.scenePos().y())
+
             # if one the return button
-            if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
-                self.Signal_ChangeModel.emit(3)
+            if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
+                self.Signal_ChangeModel.emit(1)
+
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
                     and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
@@ -488,7 +568,7 @@ class PSingleModel(PModel):
                     # if black wins
                     if result:
                         print(winner, "wins")
-                        self.game_end(1)
+                        self.end_game(player = 1)
 
                     # AI's turn
                     self.num_pieces += 1
@@ -509,17 +589,28 @@ class PSingleModel(PModel):
                     # if white wins
                     if result:
                         print(winner, "wins")
-                        self.game_end(2)
+                        self.end_game(player = 2)
 
-        elif event.button() == Qt.LeftButton and self.is_game_end:
-            # TODO:deal with the things happend after game_end
-            pass
 
-    def game_end(self, player):
-        # TODO:deal with all those things after a play
-        self.is_game_end = True
-        # TODO:to show or hide some items
-        pass
+    # win notification
+    def end_game(self,player):
+        # black wins
+        if player == 1:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("黑方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+        # white wins
+        else:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("白方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+
+        if button == QMessageBox.Ok:
+            self.restart()
+        else:
+            self.restart()
 
 
 def print_list(value_list):
@@ -690,12 +781,13 @@ def check_win_white(matrix):
     return 0
 
 
-class PNetWorkModel(PModel):
+# online model
+class POnlineModel(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
 
     def __init__(self, parent: 'PModel' = None):
-        super(PNetWorkModel, self).__init__(parent)
+        super(POnlineModel, self).__init__(parent)
         # init UI
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
