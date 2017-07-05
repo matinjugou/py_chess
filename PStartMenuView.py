@@ -78,6 +78,11 @@ class PSquare(QGraphicsPixmapItem):
         self.pic_square_black = QPixmap("resources//pic//square_black.png")
         self.setPixmap(self.pic_square_black)
 
-        
+class PPicture_Supplement(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        self.pic_supplement = QPixmap("resources//pic//wood.jpg")
+        self.setPixmap(self.pic_supplement)
+
 
 

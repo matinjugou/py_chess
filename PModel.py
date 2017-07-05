@@ -7,7 +7,6 @@ import numpy as np
 class PModel(QGraphicsScene):
     def __init__(self, parent: 'QGraphicsScene' = None):
         super(PModel, self).__init__(parent)
-        self.is_game_end = False
     pass
 
 
@@ -20,6 +19,7 @@ class PStartMenu(PModel):
         self.startMenu = PStartMenuBackGround()
         self.startMenu.setPos(0, 0)
 
+
         # multiple label
         self.multipleLabel = PStartMenu_Multiple()
         self.multipleLabel.setPos(400, 30)
@@ -27,6 +27,8 @@ class PStartMenu(PModel):
         # machine label
         self.machineLabel = PStartMenu_Machine()
         self.machineLabel.setPos(400, 120)
+
+
         
         # add the item
         self.addItem(self.startMenu)
@@ -53,6 +55,9 @@ class PMultipleModel(PModel):
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
+
 
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
@@ -68,6 +73,7 @@ class PMultipleModel(PModel):
         # cursor square
         self.square = PSquare()
 
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -83,8 +89,11 @@ class PMultipleModel(PModel):
         self.returnLabel = PReturn()
         self.square = PSquare()
         self.square.hide()
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
         self.returnLabel.setPos(540,0)
         self.situation_matrix = [([0] * 15) for i in range(0, 15)]
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -146,7 +155,7 @@ class PMultipleModel(PModel):
                         # if black wins
                         if result == 1:
                             print("black wins")
-                            self.restart()
+                            self.end_game(player = 1)
 
                     else:
                         self.num_pieces += 1
@@ -163,11 +172,29 @@ class PMultipleModel(PModel):
                         # if white wins
                         if result == 2:
                             print("white wins")
-                            self.restart()
+                            self.end_game(player = 2)
 
             pass
 
-    # game end function
+    # win notification
+    def end_game(self,player):
+        # black wins
+        if player == 1:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("黑方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+        # white wins
+        else:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("白方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+
+        if button == QMessageBox.Ok:
+            self.restart()
+        else:
+            self.restart()
 
 
 
@@ -222,11 +249,15 @@ class PSingleModel(PModel):
         # main chess board
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
+        #picture supplement
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
         # cursor square
         self.square = PSquare()
         # return label
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540, 0)
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -355,9 +386,12 @@ class PSingleModel(PModel):
         self.board = Board()
         self.chessboard = PChessBoard()
         self.returnLabel = PReturn()
+        self.returnLabel.setPos(540, 0)
         self.square = PSquare()
         self.square.hide()
-        self.returnLabel.setPos(540, 0)
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
@@ -419,7 +453,7 @@ class PSingleModel(PModel):
     def mousePressEvent(self, event):
         super(PSingleModel, self).mousePressEvent(event)
         print(event.scenePos())
-        if event.button() == Qt.LeftButton and not self.is_game_end:
+        if event.button() == Qt.LeftButton :
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
@@ -450,7 +484,7 @@ class PSingleModel(PModel):
                     # if black wins
                     if result:
                         print(winner, "wins")
-                        self.game_end(1)
+                        self.end_game(player = 1)
 
                     # AI's turn
                     self.num_pieces += 1
@@ -471,17 +505,28 @@ class PSingleModel(PModel):
                     # if white wins
                     if result:
                         print(winner, "wins")
-                        self.game_end(2)
+                        self.end_game(player = 2)
 
-        elif event.button() == Qt.LeftButton and self.is_game_end:
-            # TODO:deal with the things happend after game_end
-            pass
 
-    def game_end(self, player):
-        # TODO:deal with all those things after a play
-        self.is_game_end = True
-        # TODO:to show or hide some items
-        pass
+    # win notification
+    def end_game(self,player):
+        # black wins
+        if player == 1:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("黑方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+        # white wins
+        else:
+            button = QMessageBox.question(None,"胜利！",
+                                    self.tr("白方获胜！"),
+                                    QMessageBox.Ok|QMessageBox.Cancel,
+                                    QMessageBox.Ok)
+
+        if button == QMessageBox.Ok:
+            self.restart()
+        else:
+            self.restart()
 
 
 # check win for black piece
