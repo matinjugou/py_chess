@@ -54,14 +54,16 @@ class PStartMenu_Machine(QGraphicsPixmapItem):
 
 
 class PReturn(QGraphicsPixmapItem):
+
     def __init__(self, parent: QGraphicsPixmapItem = None):
-        super().__init__()
+        super(PReturn, self).__init__()
         # machine label
 
         self.pic_return_1 =  QPixmap("resources//pic//return1.png")
         self.pic_return_2 =  QPixmap("resources//pic//return2.png")
         self.setAcceptHoverEvents(True)
         self.setPixmap(self.pic_return_1)
+
 
     def hoverEnterEvent(self, QGraphicsSceneHoverEvent):
         self.setPixmap(self.pic_return_2)
@@ -71,6 +73,9 @@ class PReturn(QGraphicsPixmapItem):
         self.setPixmap(self.pic_return_1)
         return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
 
+
+
+# cursor
 class PSquare(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
@@ -78,11 +83,32 @@ class PSquare(QGraphicsPixmapItem):
         self.pic_square_black = QPixmap("resources//pic//square_black.png")
         self.setPixmap(self.pic_square_black)
 
+# another background image
 class PPicture_Supplement(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
         self.pic_supplement = QPixmap("resources//pic//wood.jpg")
         self.setPixmap(self.pic_supplement)
+
+# undo
+class PUndo(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        self.pic_undo_1 = QPixmap("resources//pic//regret_1.png")
+        self.pic_undo_2 = QPixmap("resources//pic//regret_2.png")
+
+        self.setAcceptHoverEvents(True)
+        self.setPixmap(self.pic_undo_1)
+
+    def hoverEnterEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_undo_2)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+    def hoverLeaveEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_undo_1)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+
 
 
 
