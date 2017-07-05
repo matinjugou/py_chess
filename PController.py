@@ -37,7 +37,6 @@ class PController(QMainWindow):
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
-
     @pyqtSlot(int, name = "ChangeModel")
     def ChangeModel(self, model_code):
         if model_code == 1:
