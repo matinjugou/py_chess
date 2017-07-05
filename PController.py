@@ -37,6 +37,12 @@ class PController(QMainWindow):
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
 
+    def load_net_model(self):
+        self.setFixedSize(700, 533)
+        self.current_model = PNetWorkModel()
+        self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
+        self.MainView.setScene(self.current_model)
+
     @pyqtSlot(int, name = "ChangeModel")
     def ChangeModel(self, model_code):
         if model_code == 1:
@@ -50,5 +56,9 @@ class PController(QMainWindow):
         if model_code == 3:
             self.load_start_menu()
             print("get signal 3")
+        pass
+        if model_code == 4:
+            self.load_net_model()
+            print("get signal 4")
         pass
 

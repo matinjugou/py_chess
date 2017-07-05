@@ -2,6 +2,10 @@ from PChessBoard import *
 from collections import deque
 from PStartMenuView import *
 import numpy as np
+import copy as copy
+import socket
+import time as time
+import threading
 
 
 class PModel(QGraphicsScene):
@@ -27,11 +31,16 @@ class PStartMenu(PModel):
         # machine label
         self.machineLabel = PStartMenu_Machine()
         self.machineLabel.setPos(400, 120)
+
+        # net label
+        self.netLabel = PStartMenu_Net()
+        self.netLabel.setPos(400, 210)
         
         # add the item
         self.addItem(self.startMenu)
         self.addItem(self.machineLabel)
         self.addItem(self.multipleLabel)
+        self.addItem(self.netLabel)
     pass
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent'):
@@ -41,6 +50,8 @@ class PStartMenu(PModel):
                 self.Signal_ChangeModel.emit(2)
             elif 120.0 <= event.scenePos().y() <= 200.0:
                 self.Signal_ChangeModel.emit(1)
+            elif 210.0 <= event.scenePos().y() <= 280.0:
+                self.Signal_ChangeModel.emit(4)
             pass
 
 
@@ -207,7 +218,6 @@ class Board(object):
 
 # the model in which people play with AI.
 # temporarily, we rule it that AI go first using white chessman
-# TODO:add a function by which player can choose that AI go first
 class PSingleModel(PModel):
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
 
@@ -333,17 +343,48 @@ class PSingleModel(PModel):
                 max_value = value_list[pos]
         return max_move
 
-    def print_list(self, value_list):
-        count = 0
-        value_row_list = []
-        for i in range(225):
-            value_row_list.append(str(value_list[i]))
-            count += 1
-            if count == 15:
-                print(' '.join(value_row_list))
-                value_row_list = []
-                count = 0
+    def get_move_hard(self):
+
         pass
+
+    # alpha-beta
+    def max_node_value(self, board, depth, player, alpha, beta):
+        current_value = self.evaluate_func(board)
+        if depth <= 0 or self.has_a_winner(board)[0]:
+            return current_value
+        best = -10000000
+        for move in board.available:
+            board_copy = copy.deepcopy(board)
+            board_copy.update(player, move)
+            temp_value = self.min_node_value(board_copy, depth - 1, player, alpha, max(best, beta))
+            if temp_value > best:
+                best = temp_value
+            if temp_value > alpha:
+                break
+        return best
+
+    def min_node_value(self, board, depth, player, alpha, beta):
+        current_value = self.evaluate_func(board)
+        if depth <= 0 or self.has_a_winner(board)[0]:
+            return current_value
+
+        best = 100000000
+
+        for move in board.available:
+            board_copy = copy.deepcopy(board)
+            board_copy.update(3 - player, move)
+            temp_value = self.max_node_value(board_copy, depth - 1, player, min(best, alpha), beta)
+            if temp_value < best:
+                best = temp_value
+            if temp_value < beta:
+                break
+            pass
+        return best
+
+
+    def evaluate_func(self, board):
+        value = 0
+        return value
 
     # restart
     def restart(self, single_move_time=2, max_actions=1000):
@@ -478,6 +519,19 @@ class PSingleModel(PModel):
         # TODO:deal with all those things after a play
         self.is_game_end = True
         # TODO:to show or hide some items
+        pass
+
+
+def print_list(value_list):
+        count = 0
+        value_row_list = []
+        for i in range(225):
+            value_row_list.append(str(value_list[i]))
+            count += 1
+            if count == 15:
+                print(' '.join(value_row_list))
+                value_row_list = []
+                count = 0
         pass
 
 
@@ -634,3 +688,142 @@ def check_win_white(matrix):
                         return 2
 
     return 0
+
+
+class PNetWorkModel(PModel):
+    # signal to emit
+    Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
+
+    def __init__(self, parent: 'PModel' = None):
+        super(PNetWorkModel, self).__init__(parent)
+        # init UI
+        self.chessboard = PChessBoard()
+        self.chessboard.setPos(0, 0)
+        self.board = Board()
+        self.waiting_board = PWaitingBoard()
+
+
+        # stack for black piece and white chess
+        self.black_chessman_queue = deque()
+        self.white_chessman_queue = deque()
+
+        # some argument for a play
+        self.num_pieces = 0
+
+        # return label
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540, 0)
+
+        # cursor square
+        self.square = PSquare()
+
+        self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
+        self.addItem(self.square)
+
+        # game status
+        self.receiving_broadcast = True
+        self.game_start = False
+        self.game_end = False
+
+        # socket
+        self.broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.broadcast_socket.setblocking(0)
+        self.PORT = 1060
+        self.broadcast_socket.bind((' ', self.PORT))
+        self.game_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.get_address = {}
+        self.t1 = threading.Thread(target=self.accept_broadcast)
+        self.t1.start()
+
+    def accept_broadcast(self):
+        while True:
+            try:
+                data, address = self.broadcast_socket.recvfrom(65535)
+                print('Server received from {}:{}'.format(address, data.decode('utf-8')))
+            except:
+                time.sleep(1)
+                continue
+            if address in self.get_address.keys():
+                self.get_address[address] = self.get_address[address] \
+                                            + len(self.get_address) + 1
+            for key in self.get_address.keys():
+                self.get_address[key] = self.get_address[key] - 1
+                if self.get_address[key] <= 0:
+                    self.get_address.pop(key)
+
+
+    # mouse move event
+    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
+        super(PNetWorkModel, self).mousePressEvent(event)
+        # if on the chess board
+        if self.chessboard.left_up_x - 20.0 <= event.scenePos().x() <= self.chessboard.right_down_x + 20.0 \
+                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0:
+            temp_col = int((event.scenePos().x() - self.chessboard.left_up_x
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            temp_row = int((event.scenePos().y() - self.chessboard.left_up_y
+                            + 0.25 * self.chessboard.space) / self.chessboard.space)
+            # that space has not been set piece
+            if (15 * temp_row + temp_col) in self.board.available:
+                self.square.show()
+                self.square.setPos(self.chessboard.space
+                                   * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
+            else:
+                self.square.hide()
+
+    # mouse press event
+    def mousePressEvent(self, event):
+        super(PNetWorkModel, self).mousePressEvent(event)
+        print(event.scenePos())
+        if event.button() == Qt.LeftButton:
+            print(event.scenePos().x(), event.scenePos().y())
+            # if one the return button
+            if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
+                self.Signal_ChangeModel.emit(3)
+            # if on the chess board
+            if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
+                    and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
+                temp_col = int((event.scenePos().x() - self.chessboard.left_up_x +
+                                0.25 * self.chessboard.space) / self.chessboard.space)
+                temp_row = int((event.scenePos().y() - self.chessboard.left_up_y +
+                                0.25 * self.chessboard.space) / self.chessboard.space)
+                # that space has not been set piece
+                if self.situation_matrix[temp_row][temp_col] == 0:
+                    # black chessman turn
+                    if self.num_pieces % 2 == 0:
+                        self.num_pieces += 1
+                        self.situation_matrix[temp_row][temp_col] = 1
+                        temp_black_chessman = BlackChessMan(self)
+                        temp_black_chessman.set_index_pos(temp_col, temp_row)
+                        temp_black_chessman.setPos(
+                            self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                            self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                        print("black_chess_index_pos (%d, %d)" % (temp_col, temp_row))
+                        self.addItem(temp_black_chessman)
+                        self.black_chessman_queue.append(temp_black_chessman)
+                        # check for win
+                        result = check_win_black(self.situation_matrix)
+                        # if black wins
+                        if result == 1:
+                            print("black wins")
+                            self.restart()
+                    else:
+                        self.num_pieces += 1
+                        self.situation_matrix[temp_row][temp_col] = 2
+                        temp_white_chessman = WhiteChessMan(self)
+                        temp_white_chessman.set_index_pos(temp_col, temp_row)
+                        temp_white_chessman.setPos(
+                            self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                            self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                        print("while_chess_index_pos (%d, %d)" % (temp_col, temp_row))
+                        self.addItem(temp_white_chessman)
+                        self.white_chessman_queue.append(temp_white_chessman)
+                        # check for win
+                        result = check_win_white(self.situation_matrix)
+                        # if white wins
+                        if result == 2:
+                            print("white wins")
+                            self.restart()
+            pass

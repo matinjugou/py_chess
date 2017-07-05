@@ -53,6 +53,25 @@ class PStartMenu_Machine(QGraphicsPixmapItem):
         return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
 
 
+class PStartMenu_Net(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+
+        # multiple label
+        self.pic_net_1 = QPixmap("resources//pic//multiple1.png")
+        self.pic_net_2 = QPixmap("resources//pic//multiple2.png")
+        self.setAcceptHoverEvents(True)
+        self.setPixmap(self.pic_net_1)
+
+    def hoverEnterEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_net_2)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+    def hoverLeaveEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_net_1)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+
 class PReturn(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
@@ -77,6 +96,13 @@ class PSquare(QGraphicsPixmapItem):
         self.pic_square_white = QPixmap("resources//pic//square_white.png")
         self.pic_square_black = QPixmap("resources//pic//square_black.png")
         self.setPixmap(self.pic_square_black)
+
+
+class PWaitingBoard(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        self.background = QPixmap("resources//pic//square_white.png")
+        self.setPixmap(self.background)
 
         
 
