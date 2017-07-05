@@ -166,6 +166,9 @@ class PMultipleModel(PModel):
 
             pass
 
+    # game end function
+
+
 
 class Board(object):
     # board for game
