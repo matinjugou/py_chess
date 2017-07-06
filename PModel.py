@@ -804,28 +804,33 @@ class BroadcastAccepter(QThread):
         super(BroadcastAccepter, self).__init__(parent)
         self.get_address = {}
         self.send_address = []
-        self.broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.broadcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.broadcast_socket.settimeout(3)
+        self.running = 1
         # self.broadcast_socket.setblocking(0)
         self.PORT = 1060
-        self.broadcast_socket.bind((' ', self.PORT))
-        self.game_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def run(self):
+        self.broadcast_recv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.broadcast_recv_socket.settimeout(3)
+        self.broadcast_recv_socket.bind((' ', self.PORT))
         last_len = 2
-        while True:
+        while self.running:
+            print("receiver still working")
             try:
-                data, address = self.broadcast_socket.recvfrom(65535)
-                self.get_address[address] = last_len + 2
+                data, address = self.broadcast_recv_socket.recvfrom(65535)
+                self.get_address[address] = (last_len + 2, data.decode('utf-8'))
             except:
                 pass
             self.send_address = []
             for key in self.get_address.keys():
-                if self.get_address[key] > 0:
-                    self.send_address.append(key[0])
-                    self.get_address[key] = self.get_address[key] - 1
+                if self.get_address[key][0] > 0:
+                    self.send_address.append((self.get_address[key][1], key))
+                    self.get_address[key] = (self.get_address[key][0] - 1, self.get_address[key][1])
             last_len = len(self.send_address)
+
+        self.broadcast_recv_socket.shutdown(2)
+        self.broadcast_recv_socket.close()
+        self.exit(0)
 
     def send_address_list(self):
         return self.send_address
@@ -834,23 +839,27 @@ class BroadcastAccepter(QThread):
 class BroadcastSender(QThread):
     Signal_get_pos = pyqtSignal(int, int, name = "Signal_get_pos")
 
-    def __init__(self, name, parent = None):
+    def __init__(self, parent = None):
         super(BroadcastSender, self).__init__(parent)
-        self.broadcast_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.broadcast_send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.network = '<broadcast>'
         self.port = 1060
-        self.name = name
+        self.name = " "
+        self.running = 1
 
     def run(self):
-        while True:
+        self.broadcast_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        while self.running:
             self.broadcast_send_socket.sendto(self.name.encode('utf-8'), (self.network, self.port))
             time.sleep(1)
-        pass
+            print("sender still working")
+        self.broadcast_send_socket.shutdown(2)
+        self.broadcast_send_socket.close()
+        self.exit(0)
 
 
 class PListAddress(QListWidgetItem):
-    def __init__(self, name, address, parent = None):
+    def __init__(self, name, address, parent=None):
         super(PListAddress, self).__init__(parent)
         self.name = name
         self.address = address
@@ -871,6 +880,7 @@ class PListDialog(QDialog):
         self.link_button = QPushButton()
         self.link_button.setFixedSize(100, 30)
         self.link_button.setText("连接")
+        self.link_button.clicked.connect(self.connect_to_player)
 
         self.name_input = QLineEdit()
         self.name_input.setFixedSize(100, 20)
@@ -903,9 +913,9 @@ class PListDialog(QDialog):
         self.setLayout(self.main_layout)
 
         # socket
-        self.text_line_items = []
         self.address_list = []
         self.broadcast_recv = BroadcastAccepter()
+        self.broadcast_sender = BroadcastSender()
         self.broadcast_recv.Signal_recv_address_list.connect(self.accept_broadcast)
         self.broadcast_recv.start()
 
@@ -920,20 +930,41 @@ class PListDialog(QDialog):
         address_list = self.broadcast_recv.send_address_list()
         self.choices_list.clear()
         for address in address_list:
-            self.choices_list.addItem(address)
+            temp_list_item = PListAddress(address[0], address[1])
+            temp_list_item.setText(address[0])
+            self.choices_list.addItem(temp_list_item)
         pass
 
     def make_room(self):
         name_str = self.name_input.text()
         if len(name_str) > 0:
-            self.broadcast_sender = BroadcastSender(name_str)
+            self.link_button.setDisabled(True)
+            self.broadcast_recv.running = 0
+            self.make_room_button.setText("停止广播")
+            self.make_room_button.clicked.disconnect(self.make_room)
+            self.make_room_button.clicked.connect(self.terminate_broadcast)
+            self.broadcast_sender.name = name_str
+            self.broadcast_sender.running = 1
             self.broadcast_sender.start()
-            self.broadcast_recv.terminate()
         else:
             QMessageBox.question(None, "提示",
                                           self.tr("请输入昵称"),
                                           QMessageBox.Ok,
                                           QMessageBox.Ok)
+        pass
+
+    def terminate_broadcast(self):
+        self.link_button.setDisabled(False)
+        self.broadcast_sender.running = 0
+        self.make_room_button.setText("创建房间")
+        self.make_room_button.clicked.disconnect(self.terminate_broadcast)
+        self.make_room_button.clicked.connect(self.make_room)
+        self.broadcast_recv.running = 1
+        self.broadcast_recv.start()
+
+    def connect_to_player(self):
+        itemlist = self.choices_list.selectedItems()
+        print("{}:{}".format(itemlist[0].name, itemlist[0].address))
         pass
 
 
