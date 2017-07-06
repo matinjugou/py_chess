@@ -893,6 +893,7 @@ class PListDialog(QDialog):
         self.cancel_button = QPushButton()
         self.cancel_button.setFixedSize(100, 30)
         self.cancel_button.setText("退出")
+
         self.choices_list = QListWidget()
 
         # layouts
@@ -967,6 +968,14 @@ class PListDialog(QDialog):
         print("{}:{}".format(itemlist[0].name, itemlist[0].address))
         pass
 
+    def as_client(self):
+        # TODO:deal with things as a client
+        pass
+
+    def as_server(self):
+        # TODO:deal with things as a server
+        pass
+
 
 # online model
 class POnlineModel(PModel):
@@ -979,8 +988,6 @@ class POnlineModel(PModel):
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.board = Board()
-        self.waiting_board = PWaitingBoard()
-        self.waiting_board.setPos(0, 0)
 
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
@@ -992,8 +999,6 @@ class POnlineModel(PModel):
         # return label
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540, 0)
-        self.activateBroadcast = PReturn()
-        self.activateBroadcast.setPos(100, 400)
 
         # cursor square
         self.square = PSquare()
@@ -1001,10 +1006,6 @@ class POnlineModel(PModel):
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
-        self.addItem(self.waiting_board)
-        self.addItem(self.activateBroadcast)
-        self.chessboard.hide()
-        self.returnLabel.hide()
         self.square.hide()
 
         # game status
@@ -1012,8 +1013,8 @@ class POnlineModel(PModel):
         self.game_start = False
         self.game_end = False
 
-
         self.list_window = PListDialog()
+        self.list_window.cancel_button.clicked.connect(self.quit_model)
         self.list_window.setModal(True)
 
         self.list_window.show()
@@ -1024,7 +1025,12 @@ class POnlineModel(PModel):
         self.square.show()
         pass
 
-
+    def quit_model(self):
+        self.list_window.broadcast_recv.running = 0
+        self.list_window.broadcast_sender.running = 0
+        self.list_window.hide()
+        self.Signal_ChangeModel.emit(1)
+        pass
 
     # mouse move event
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
