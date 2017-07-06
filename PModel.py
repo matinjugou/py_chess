@@ -4,7 +4,7 @@ from PStartMenuView import *
 import numpy as np
 import copy as copy
 import socket
-import threading
+import time
 
 
 class PModel(QGraphicsScene):
@@ -834,25 +834,26 @@ class BroadcastAccepter(QThread):
 class BroadcastSender(QThread):
     Signal_get_pos = pyqtSignal(int, int, name = "Signal_get_pos")
 
-    def __init__(self, address, parent = None):
+    def __init__(self, name, parent = None):
         super(BroadcastSender, self).__init__(parent)
-        self.connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.address = address
+        self.broadcast_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.network = '<broadcast>'
+        self.port = 1060
+        self.name = name
 
     def run(self):
-        self.connection_socket.connect((self.address, 1060))
-        self.sendThreading = threading.Thread(target=self.sendMsg)
-        self.sendThreading.start()
-        self.recvThreading = threading.Thread(target=self.recvMsg)
-        self.recvThreading.start()
+        while True:
+            self.broadcast_send_socket.sendto(self.name.encode('utf-8'), (self.network, self.port))
+            time.sleep(1)
+        pass
 
-    def sendMsg(self, Msg):
-        self.connection_socket.send(Msg)
 
-    def recvMsg(self, Msg):
-        data = self.connection_socket.recv(1024)
-        print(data)
-    pass
+class PListAddress(QListWidgetItem):
+    def __init__(self, name, address, parent = None):
+        super(PListAddress, self).__init__(parent)
+        self.name = name
+        self.address = address
 
 
 class PListDialog(QDialog):
@@ -877,6 +878,7 @@ class PListDialog(QDialog):
         self.make_room_button = QPushButton()
         self.make_room_button.setFixedSize(100, 30)
         self.make_room_button.setText("创建房间")
+        self.make_room_button.clicked.connect(self.make_room)
 
         self.cancel_button = QPushButton()
         self.cancel_button.setFixedSize(100, 30)
@@ -919,6 +921,19 @@ class PListDialog(QDialog):
         self.choices_list.clear()
         for address in address_list:
             self.choices_list.addItem(address)
+        pass
+
+    def make_room(self):
+        name_str = self.name_input.text()
+        if len(name_str) > 0:
+            self.broadcast_sender = BroadcastSender(name_str)
+            self.broadcast_sender.start()
+            self.broadcast_recv.terminate()
+        else:
+            QMessageBox.question(None, "提示",
+                                          self.tr("请输入昵称"),
+                                          QMessageBox.Ok,
+                                          QMessageBox.Ok)
         pass
 
 
