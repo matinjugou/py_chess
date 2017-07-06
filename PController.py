@@ -5,6 +5,7 @@ from PStartMenuView import *
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 
+
 class PController(QMainWindow):
     def __init__(self):
         super(PController, self).__init__()
@@ -36,7 +37,6 @@ class PController(QMainWindow):
         self.current_model = PMultipleModel()
         self.current_model.Signal_ChangeModel.connect(self.ChangeModel)
         self.MainView.setScene(self.current_model)
-
 
     # load online model
     # TO DO

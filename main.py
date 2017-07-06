@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-import sys
-from PyQt5.QtWidgets import *
 from PController import *
 
 print('Hello')
