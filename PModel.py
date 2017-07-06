@@ -291,6 +291,12 @@ class PSingleModel(PModel):
 
     def __init__(self, single_move_time=5, max_actions=1000, parent: PModel = None):
         super(PSingleModel, self).__init__()
+        # some arguments for a play
+        self.num_pieces = 0
+        self.board = Board()
+        self.n_in_row = 5
+        # level of difficiculty(default = 1)
+        self.level = 1
         # init UI
         # main scene
         self.scene = QGraphicsScene()
@@ -311,16 +317,29 @@ class PSingleModel(PModel):
         self.addItem(self.returnLabel)
         self.addItem(self.square)
 
-        # chessman, 2 standing for white
-        # TODO:to dicide whether we need following statements
-        # stack for black chess and white chess
-        # self.black_chessman_queue = deque()
-        # self.white_chessman_queue = deque()
-        # some argument for a play
+        # chose the level
+        customMsgBox = QMessageBox(None)
+        customMsgBox.setWindowTitle("难度选择")
+        easyButton = customMsgBox.addButton(self.tr("简单"),
+                                            QMessageBox.ActionRole)
+        hardButton = customMsgBox.addButton(self.tr("困难"),
+                                              QMessageBox.ActionRole)
 
-        self.num_pieces = 0
-        self.board = Board()
-        self.n_in_row = 5
+        customMsgBox.setText(self.tr("请选择难度：简单/困难"))
+        customMsgBox.exec_()
+
+        button = customMsgBox.clickedButton()
+        if button == easyButton:
+            self.level = 1
+        elif button == hardButton:
+            self.level = 2
+        else:
+            pass
+
+            # chessman, 2 standing for white
+        # TODO:to dicide whether we need following statements
+
+
         pass
 
     # strategy functions
