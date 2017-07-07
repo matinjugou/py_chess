@@ -622,7 +622,7 @@ class PSingleModel(PModel):
                     # TODO:whether add backup
                     #self.black_chessman_queue.append(temp_black_chessman)
                     # check for win
-                    result, winner = self.has_a_winner(self.board)
+                    result, winner = has_a_winner(self.board)
                     # if black wins
                     if result:
                         print(winner, "wins")
@@ -643,7 +643,7 @@ class PSingleModel(PModel):
                     # TODO:whether add backup
                     # self.white_chessman_queue.append(temp_white_chessman)
                     # check for win
-                    result, winner = self.has_a_winner(self.board)
+                    result, winner = has_a_winner(self.board)
                     # if white wins
                     if result:
                         print(winner, "wins")
