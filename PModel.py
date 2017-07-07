@@ -495,41 +495,6 @@ class PSingleModel(PModel):
         self.addItem(self.returnLabel)
         self.addItem(self.square)
 
-    def has_a_winner(self, board):
-        """
-        检查是否有玩家获胜
-        """
-        moved = list(set(range(225)) - set(board.available))
-        if len(moved) < 5 + 2:
-            return False, -1
-
-        width = 15
-        height = 15
-        states = board.states
-        n = 5
-        for m in moved:
-            h = m // width
-            w = m % width
-            player = states[m]
-
-            if (w in range(width - n + 1) and
-                        len(set(states[i] for i in range(m, m + n))) == 1):  # 横向连成一线
-                return True, player
-
-            if (h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * width, width))) == 1):  # 竖向连成一线
-                return True, player
-
-            if (w in range(width - n + 1) and h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):  # 右斜向上连成一线
-                return True, player
-
-            if (w in range(n - 1, width) and h in range(height - n + 1) and
-                        len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):  # 左斜向下连成一线
-                return True, player
-
-        return False, -1
-
     # mouse move event
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
         super(PSingleModel, self).mousePressEvent(event)
@@ -641,6 +606,36 @@ def print_list(value_list):
                 value_row_list = []
                 count = 0
         pass
+
+
+def has_a_winner(board):
+    """
+    检查是否有玩家获胜
+    """
+    moved = list(set(range(225)) - set(board.available))
+    if len(moved) < 5 + 2:
+        return False, -1
+    width = 15
+    height = 15
+    states = board.states
+    n = 5
+    for m in moved:
+        h = m // width
+        w = m % width
+        player = states[m]
+        if (w in range(width - n + 1) and
+                    len(set(states[i] for i in range(m, m + n))) == 1):  # 横向连成一线
+            return True, player
+        if (h in range(height - n + 1) and
+                    len(set(states[i] for i in range(m, m + n * width, width))) == 1):  # 竖向连成一线
+            return True, player
+        if (w in range(width - n + 1) and h in range(height - n + 1) and
+                    len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):  # 右斜向上连成一线
+            return True, player
+        if (w in range(n - 1, width) and h in range(height - n + 1) and
+                    len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):  # 左斜向下连成一线
+            return True, player
+    return False, -1
 
 
 # check win for black piece
@@ -863,7 +858,7 @@ class BroadcastSender(QThread):
 
 
 class GameLinker(QThread):
-    Signal_get_message = pyqtSignal(str, name="Signal_get_message")
+    Signal_send_request = pyqtSignal()
 
     def __init__(self, parent=None):
         super(GameLinker, self).__init__(parent)
@@ -874,40 +869,24 @@ class GameLinker(QThread):
         self.running = 1
         self.is_as_client = False
         self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.game_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.game_socket = None
         self.recv_threading = None
 
     def run(self):
         if self.is_as_client:
             self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.connecting_socket.connect((self.address, self.port))
-            self.recv_threading = threading.Thread(target=self.recv_msg, args=(self.connecting_socket,))
-            self.recv_threading.start()
-            while True and self.running:
-                send_str = input()
-                self.connecting_socket.send(send_str.encode('utf-8'))
-            pass
+            self.game_socket = self.connecting_socket
+            self.Signal_send_request.emit()
         else:
             self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.connecting_socket.bind((self.address, 1061))
             self.connecting_socket.listen(5)
             self.game_socket, addr = self.connecting_socket.accept()
-            self.recv_threading = threading.Thread(target=self.recv_msg, args=(self.game_socket,))
-            self.recv_threading.start()
-            while True and self.running:
-                send_str = input()
-                self.game_socket.send(send_str.encode('utf-8'))
-            pass
-            self.game_socket.shutdown(2)
-            self.game_socket.close()
-        self.connecting_socket.shutdown(2)
-        self.connecting_socket.close()
-        self.exit(0)
+            self.Signal_send_request.emit()
 
-    def recv_msg(self, recv_socket):
-        while True:
-            data = recv_socket.recv(1024).decode()
-            print(data)
+    def get_info(self):
+        return self.connecting_socket, self.game_socket, self.is_as_client
 
 
 class PListAddress(QListWidgetItem):
@@ -1004,17 +983,23 @@ class PListDialog(QDialog):
             self.broadcast_sender.name = name_str
             self.broadcast_sender.running = 1
             self.broadcast_sender.start()
-            self.game_linker_server.address = "59.66.137.30"
+            self.game_linker_server.address = socket.gethostbyname_ex(socket.gethostname())[2][-1]
             self.game_linker_server.name = name_str
             self.game_linker_server.is_as_client = False
             self.game_linker_server.running = 1
             self.game_linker_server.start()
+            self.Signal_send_linker.emit(self.game_linker_server)
 
         else:
             QMessageBox.question(None, "提示"
                                  , self.tr("请输入昵称")
                                  , QMessageBox.Ok
                                  , QMessageBox.Ok)
+        pass
+
+    def close_broadcast(self):
+        self.broadcast_sender.running = 0
+        self.broadcast_recv.running = 0
         pass
 
     def terminate_broadcast(self):
@@ -1037,6 +1022,7 @@ class PListDialog(QDialog):
             self.game_linker_client.name = "myself"
             self.game_linker_client.is_as_client = True
             self.game_linker_client.start()
+            self.Signal_send_linker.emit(self.game_linker_client)
         pass
 
 
@@ -1044,6 +1030,7 @@ class PListDialog(QDialog):
 class POnlineModel(PModel):
     # signal to emit
     Signal_ChangeModel = pyqtSignal(int, name="Signal_ChangeModel")
+    Signal_AddChessman = pyqtSignal(int, int, name="Signal_AddChessman")
 
     def __init__(self, parent: 'PModel' = None):
         super(POnlineModel, self).__init__(parent)
@@ -1051,6 +1038,8 @@ class POnlineModel(PModel):
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.board = Board()
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100, 0)
 
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
@@ -1082,16 +1071,108 @@ class POnlineModel(PModel):
 
         self.list_window.show()
         self.list_window.Signal_send_linker.connect(self.get_linker)
+        self.recv_threading = None
+        self.connecting_socket = None
+        self.game_socket = None
         self.game_linker = None
+        self.is_as_client = False
+        self.Signal_AddChessman.connect(self.add_chessman)
+
+    def restart(self):
+        self.black_chessman_queue.clear()
+        self.white_chessman_queue.clear()
+        self.num_pieces = 0
+        self.clear()
+        self.board = Board()
+
+        self.chessboard = PChessBoard()
+
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,450)
+
+        self.square = PSquare()
+        self.square.hide()
+
+
+
+        # undo label
+        self.undoLabel = PUndo()
+        self.undoLabel.setPos(540,380)
+
+        self.addItem(self.supplement)
+        self.addItem(self.chessboard)
+        self.addItem(self.returnLabel)
+        self.addItem(self.square)
+        self.addItem(self.undoLabel)
+
+    def add_chessman(self, temp_row, temp_col):
+        if not self.is_as_client and self.num_pieces % 2 == 1:
+            temp_move = temp_row * 15 + temp_col
+            if temp_move in self.board.available:
+                # black chessman turn
+                self.num_pieces += 1
+                temp_white_chessman = WhiteChessMan(self)
+                temp_white_chessman.set_index_pos(temp_row, temp_col)
+                temp_white_chessman.setPos(
+                    self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                print("black_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                self.addItem(temp_white_chessman)
+                self.white_chessman_queue.append(temp_white_chessman)
+                self.board.update(self.num_pieces % 2, temp_move)
+                # check for win
+                result, winner = has_a_winner(self.board)
+                # if black wins
+                if result == 1:
+                    print("black wins")
+                    self.end_game(winner)
+
+        elif self.is_as_client and self.num_pieces % 2 == 0:
+            temp_move = temp_row * 15 + temp_col
+            if temp_move in self.board.available:
+                # black chessman turn
+                self.num_pieces += 1
+                temp_black_chessman = BlackChessMan(self)
+                temp_black_chessman.set_index_pos(temp_row, temp_col)
+                temp_black_chessman.setPos(
+                    self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                    self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                print("black_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                self.addItem(temp_black_chessman)
+                self.black_chessman_queue.append(temp_black_chessman)
+                self.board.update(self.num_pieces % 2, temp_move)
+                # check for win
+                result, winner = has_a_winner(self.board)
+                # if black wins
+                if result == 1:
+                    print("black wins")
+                    self.end_game(winner)
+            pass
+        pass
+
+    def get_move_from_net(self):
+        while True:
+            data = self.game_socket.recv(1024).decode('utf-8')
+            data_list = data.split(',')
+            temp_row = int(data_list[0])
+            temp_col = int(data_list[1])
+            self.Signal_AddChessman.emit(temp_row, temp_col)
+        pass
+
+    def get_socket(self):
+        self.connecting_socket, self.game_socket, self.is_as_client = self.game_linker.get_info()
+        self.game_linker.exit(0)
+        self.list_window.close_broadcast()
+        self.list_window.hide()
+        self.game_start = True
+        self.receiving_broadcast = False
+        self.recv_threading = threading.Thread(target=self.get_move_from_net)
+        self.recv_threading.start()
+        pass
 
     def get_linker(self, game_linker):
         self.game_linker = game_linker
-
-    def game_start(self):
-        self.chessboard.show()
-        self.returnLabel.show()
-        self.square.show()
-        pass
+        self.game_linker.Signal_send_request.connect(self.get_socket)
 
     def quit_model(self):
         self.list_window.broadcast_recv.running = 0
@@ -1131,52 +1212,82 @@ class POnlineModel(PModel):
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
                 self.Signal_ChangeModel.emit(3)
-            # if on the chess board
-            if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
-                    and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
-                temp_col = int((event.scenePos().x() - self.chessboard.left_up_x +
-                                0.25 * self.chessboard.space) / self.chessboard.space)
-                temp_row = int((event.scenePos().y() - self.chessboard.left_up_y +
-                                0.25 * self.chessboard.space) / self.chessboard.space)
-                # that space has not been set piece
-                if self.situation_matrix[temp_row][temp_col] == 0:
-                    # black chessman turn
-                    if self.num_pieces % 2 == 0:
-                        self.num_pieces += 1
-                        self.situation_matrix[temp_row][temp_col] = 1
-                        temp_black_chessman = BlackChessMan(self)
-                        temp_black_chessman.set_index_pos(temp_col, temp_row)
-                        temp_black_chessman.setPos(
-                            self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
-                            self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
-                        print("black_chess_index_pos (%d, %d)" % (temp_col, temp_row))
-                        self.addItem(temp_black_chessman)
-                        self.black_chessman_queue.append(temp_black_chessman)
-                        # check for win
-                        result = check_win_black(self.situation_matrix)
-                        # if black wins
-                        if result == 1:
-                            print("black wins")
-                            self.restart()
-                    else:
-                        self.num_pieces += 1
-                        self.situation_matrix[temp_row][temp_col] = 2
-                        temp_white_chessman = WhiteChessMan(self)
-                        temp_white_chessman.set_index_pos(temp_col, temp_row)
-                        temp_white_chessman.setPos(
-                            self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
-                            self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
-                        print("while_chess_index_pos (%d, %d)" % (temp_col, temp_row))
-                        self.addItem(temp_white_chessman)
-                        self.white_chessman_queue.append(temp_white_chessman)
-                        # check for win
-                        result = check_win_white(self.situation_matrix)
-                        # if white wins
-                        if result == 2:
-                            print("white wins")
-                            self.restart()
-            pass
-        elif event.button() == Qt.LeftButton and self.receiving_broadcast:
-            if 100.0 <= event.scenePos().x() <= 200.0:
 
+            # if on the chess board
+            if not self.is_as_client and self.num_pieces % 2 == 0:
+                if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
+                        and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
+                    temp_col = int((event.scenePos().x() - self.chessboard.left_up_x +
+                                    0.25 * self.chessboard.space) / self.chessboard.space)
+                    temp_row = int((event.scenePos().y() - self.chessboard.left_up_y +
+                                    0.25 * self.chessboard.space) / self.chessboard.space)
+                    temp_move = temp_row * 15 + temp_col
+                    if temp_move in self.board.available:
+                        # black chessman turn
+                            self.num_pieces += 1
+                            temp_black_chessman = BlackChessMan(self)
+                            temp_black_chessman.set_index_pos(temp_row, temp_col)
+                            temp_black_chessman.setPos(
+                                self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                            print("black_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                            self.addItem(temp_black_chessman)
+                            self.black_chessman_queue.append(temp_black_chessman)
+                            self.board.update(self.num_pieces % 2, temp_move)
+                            # check for win
+                            result, winner = has_a_winner(self.board)
+                            # if black wins
+                            if result == 1:
+                                print("black wins")
+                                self.end_game(winner)
+                            send_str = str(temp_row) + ',' + str(temp_col)
+                            self.game_socket.send(send_str.encode('utf-8'))
+            elif self.is_as_client and self.num_pieces % 2 == 1:
+                if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
+                        and self.chessboard.left_up_y - 20 <= event.scenePos().y() <= self.chessboard.right_down_y + 20:
+                    temp_col = int((event.scenePos().x() - self.chessboard.left_up_x +
+                                    0.25 * self.chessboard.space) / self.chessboard.space)
+                    temp_row = int((event.scenePos().y() - self.chessboard.left_up_y +
+                                    0.25 * self.chessboard.space) / self.chessboard.space)
+                    temp_move = temp_row * 15 + temp_col
+                    if temp_move in self.board.available:
+                        # black chessman turn
+                            self.num_pieces += 1
+                            temp_white_chessman = WhiteChessMan(self)
+                            temp_white_chessman.set_index_pos(temp_row, temp_col)
+                            temp_white_chessman.setPos(
+                                self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                            print("black_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                            self.addItem(temp_white_chessman)
+                            self.white_chessman_queue.append(temp_white_chessman)
+                            self.board.update(self.num_pieces % 2, temp_move)
+                            # check for win
+                            result, winner = has_a_winner(self.board)
+                            # if black wins
+                            if result == 1:
+                                print("black wins")
+                                self.end_game(winner)
+                            send_str = str(temp_row) + ',' + str(temp_col)
+                            self.game_socket.send(send_str.encode('utf-8'))
                 pass
+
+    # win notification
+    def end_game(self, player):
+        # black wins
+        if player == 1:
+            button = QMessageBox.question(None, "胜利！"
+                                          , self.tr("黑方获胜！")
+                                          , QMessageBox.Ok | QMessageBox.Cancel
+                                          , QMessageBox.Ok)
+        # white wins
+        else:
+            button = QMessageBox.question(None, "胜利！"
+                                          , self.tr("白方获胜！")
+                                          , QMessageBox.Ok | QMessageBox.Cancel
+                                          , QMessageBox.Ok)
+
+        if button == QMessageBox.Ok:
+            self.restart()
+        else:
+            self.restart()
