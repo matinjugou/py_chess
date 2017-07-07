@@ -19,7 +19,7 @@ def Load_ChessBoard(filename):
     fp = open(filepath,'r')
     situation_matrix = [([0] * 15) for i in range(0, 15)]
     # read the number
-    
+
     fp.close()
     return situation_matrix
     pass

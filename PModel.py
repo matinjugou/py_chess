@@ -37,12 +37,12 @@ class PStartMenu(PModel):
         # online label
         self.onlineLabel = PStartMenu_Online()
         self.onlineLabel.setPos(385,150)
-        
+
+
         # add the item
         self.addItem(self.startMenu)
         self.addItem(self.machineLabel)
         self.addItem(self.multipleLabel)
-
         self.addItem(self.onlineLabel)
     pass
 
@@ -92,13 +92,73 @@ class PMultipleModel(PModel):
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540,450)
 
+        # add the item
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.square)
         self.addItem(self.saveLabel)
         self.addItem(self.returnLabel)
         self.addItem(self.undoLabel)
+
+        # chose the level
+        customMsgBox = QMessageBox(None)
+        customMsgBox.setWindowTitle("读取存档")
+        archiveButton = customMsgBox.addButton(self.tr("读档"),
+                                            QMessageBox.ActionRole)
+        newgameButton = customMsgBox.addButton(self.tr("新游戏"),
+                                              QMessageBox.ActionRole)
+
+        customMsgBox.setText(self.tr("读取上一盘的存档 or 开始新游戏"))
+        customMsgBox.exec_()
+
+        button = customMsgBox.clickedButton()
+        if button == archiveButton:
+            self.ReadArchive()
+            # add the load file writer
+            self.fp = open("resources//doc//multiple.txt", 'a')
+        elif button == newgameButton:
+            # add the load file writer
+            self.fp = open("resources//doc//multiple.txt", 'w')
+        else:
+            pass
+
         pass
+
+    # read the load file
+    def ReadArchive(self):
+        file_reader = open("resources//doc//multiple.txt",'r')
+        while 1:
+            line = file_reader.readline()
+            if not line:# end of the file
+                break
+            else:
+                temp_type, temp_row, temp_col = line.split(' ')
+                temp_type = int(temp_type)
+                temp_row = int(temp_row)
+                temp_col = int(temp_col)
+                if temp_type == 1:# black chessman
+                    self.num_pieces += 1
+                    self.situation_matrix[temp_row][temp_col] = 1
+                    temp_black_chessman = BlackChessMan(self)
+                    temp_black_chessman.set_index_pos(temp_row, temp_col)
+                    temp_black_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                               self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+
+                    print("black_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                    self.addItem(temp_black_chessman)
+                    self.black_chessman_queue.append(temp_black_chessman)
+                else:# white chessman
+                    self.num_pieces += 1
+                    self.situation_matrix[temp_row][temp_col] = 2
+                    temp_white_chessman = WhiteChessMan(self)
+                    temp_white_chessman.set_index_pos(temp_row, temp_col)
+                    temp_white_chessman.setPos(self.chessboard.left_up_x + temp_col * self.chessboard.space - 17,
+                                               self.chessboard.left_up_y + temp_row * self.chessboard.space - 17)
+                    print("while_chess_index_pos (%d, %d)" % (temp_row, temp_col))
+                    self.addItem(temp_white_chessman)
+                    self.white_chessman_queue.append(temp_white_chessman)
+
+
 
     # restart
     def restart(self):
@@ -117,8 +177,6 @@ class PMultipleModel(PModel):
         # cursor
         self.square = PSquare()
         self.square.hide()
-
-
 
         # undo label
         self.undoLabel = PUndo()
@@ -185,7 +243,7 @@ class PMultipleModel(PModel):
 
             # if on the save button
             if 540 <= event.scenePos().x() <= 690 and 310 <= event.scenePos().y() <= 380:
-                Save_ChessBoard(self.situation_matrix,"multiple.txt")
+                pass
 
             # if on the undo button
             if 540 <= event.scenePos().x() <= 690 and 380 <= event.scenePos().y() <= 440:
@@ -193,6 +251,9 @@ class PMultipleModel(PModel):
 
             # if on the return button
             if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
+                # turn off the file reader
+                self.fp.close()
+                # turn back to start menu
                 self.Signal_ChangeModel.emit(1)
 
             # if on the chess board
@@ -222,6 +283,9 @@ class PMultipleModel(PModel):
                         if result == 1:
                             print("black wins")
                             self.end_game(player = 1)
+                        else:
+                            # write the file
+                            self.fp.write('1' + ' '+str(temp_row) + ' '+ str(temp_col) + '\n')
 
                     else:
                         self.num_pieces += 1
@@ -239,6 +303,9 @@ class PMultipleModel(PModel):
                         if result == 2:
                             print("white wins")
                             self.end_game(player = 2)
+                        else:
+                            # write the file
+                            self.fp.write('2' + ' ' + str(temp_row) + ' ' + str(temp_col) + '\n')
 
             pass
 
