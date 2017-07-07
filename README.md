@@ -26,13 +26,13 @@ Python 3.6
 作者信息
 -----------------
 黄超  
-清华大学软件学院  
+[清华大学软件学院](http://www.thss.tsinghua.edu.cn/)  
 thss15_huangc@163.com
 
 邵钰衫  
-清华大学软件学院  
+[清华大学软件学院](http://www.thss.tsinghua.edu.cn/)  
 thss15_shaoys@163.com
 
 余广琳  
-清华大学软件学院  
+[清华大学软件学院](http://www.thss.tsinghua.edu.cn/)  
 thss15_yugl@163.com
