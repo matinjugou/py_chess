@@ -1,9 +1,5 @@
-import sys
-
 from PModel import *
-from PStartMenuView import *
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore
 
 
 class PController(QMainWindow):
@@ -14,8 +10,8 @@ class PController(QMainWindow):
         self.current_model = None
         self.setWindowTitle("Gobang")
         self.setCentralWidget(self.MainView)
-        self.MainView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.MainView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.MainView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.MainView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.load_start_menu()
 
         pass
