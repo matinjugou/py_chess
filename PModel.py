@@ -378,6 +378,7 @@ class PSingleModel(PModel):
         self.num_pieces = 0
         self.board = Board()
         self.n_in_row = 5
+        self.computer_player = 1
         # level of difficiculty(default = 1)
         self.level = 1
         # init UI
@@ -420,7 +421,7 @@ class PSingleModel(PModel):
             pass
 
     # strategy functions
-    def get_move_easy(self):
+    def get_move_hard(self):
         empty = 0
         black_num = 0
         white_num = 0
@@ -512,14 +513,25 @@ class PSingleModel(PModel):
                 max_value = value_list[pos]
         return max_move
 
-    def get_move_hard(self):
-
+    def get_move_easy(self):
+        value_list = []
+        for move in self.board.available:
+            board_copy = copy.deepcopy(self.board)
+            board_copy.update(self.computer_player, move)
+            value_list.append(self.max_node_value(board_copy, 0, self.computer_player, 1000000, -1000000))
         pass
+        max_value = -1000000
+        max_index = 0
+        for i in range(len(value_list)):
+            if value_list[i] > max_value:
+                max_value = value_list[i]
+                max_index = i
+        return self.board.available[max_index]
 
     # alpha-beta
     def max_node_value(self, board, depth, player, alpha, beta):
-        current_value = self.evaluate_func(board)
-        if depth <= 0 or self.has_a_winner(board)[0]:
+        current_value = getScore(board, player)
+        if depth <= 0 or has_a_winner(board)[0]:
             return current_value
         best = -10000000
         for move in board.available:
@@ -533,8 +545,8 @@ class PSingleModel(PModel):
         return best
 
     def min_node_value(self, board, depth, player, alpha, beta):
-        current_value = self.evaluate_func(board)
-        if depth <= 0 or self.has_a_winner(board)[0]:
+        current_value = getScore(board, player)
+        if depth <= 0 or has_a_winner(board)[0]:
             return current_value
 
         best = 100000000
@@ -549,10 +561,6 @@ class PSingleModel(PModel):
                 break
             pass
         return best
-
-    def evaluate_func(self, board):
-        value = 0
-        return value
 
     # restart
     def restart(self, single_move_time=2, max_actions=1000):
@@ -627,27 +635,30 @@ class PSingleModel(PModel):
                     if result:
                         print(winner, "wins")
                         self.end_game(player = 1)
-
-                    # AI's turn
-                    self.num_pieces += 1
-                    # uct search for best solution
-                    next_move = self.get_move_easy()
-                    self.board.update((self.num_pieces + 1) % 2, next_move)
-                    next_move_row, next_move_col = next_move // 15, next_move % 15
-                    temp_white_chessman = WhiteChessMan(self)
-                    temp_white_chessman.set_index_pos(next_move_col, next_move_row)
-                    temp_white_chessman.setPos(self.chessboard.left_up_x + next_move_col * self.chessboard.space - 17,
-                                                self.chessboard.left_up_y + next_move_row * self.chessboard.space - 17)
-                    print("while_chess_index_pos (%d, %d)" %(next_move_col, next_move_row))
-                    self.addItem(temp_white_chessman)
-                    # TODO:whether add backup
-                    # self.white_chessman_queue.append(temp_white_chessman)
-                    # check for win
-                    result, winner = has_a_winner(self.board)
-                    # if white wins
-                    if result:
-                        print(winner, "wins")
-                        self.end_game(player = 2)
+                    else:
+                        # AI's turn
+                        self.num_pieces += 1
+                        # uct search for best solution
+                        if self.level == 1:
+                            next_move = self.get_move_easy()
+                        else:
+                            next_move = self.get_move_hard()
+                        self.board.update((self.num_pieces + 1) % 2, next_move)
+                        next_move_row, next_move_col = next_move // 15, next_move % 15
+                        temp_white_chessman = WhiteChessMan(self)
+                        temp_white_chessman.set_index_pos(next_move_col, next_move_row)
+                        temp_white_chessman.setPos(self.chessboard.left_up_x + next_move_col * self.chessboard.space - 17,
+                                                    self.chessboard.left_up_y + next_move_row * self.chessboard.space - 17)
+                        print("while_chess_index_pos (%d, %d)" %(next_move_col, next_move_row))
+                        self.addItem(temp_white_chessman)
+                        # TODO:whether add backup
+                        # self.white_chessman_queue.append(temp_white_chessman)
+                        # check for win
+                        result, winner = has_a_winner(self.board)
+                        # if white wins
+                        if result:
+                            print(winner, "wins")
+                            self.end_game(player = 2)
 
 
     # win notification
@@ -669,6 +680,121 @@ class PSingleModel(PModel):
             self.restart()
         else:
             self.restart()
+
+
+def getScore(board, player):
+    moved = list(set(range(225)) - set(board.available))
+    width = board.width
+    total_value = 0
+    states = board.states
+    n = 5
+    for m in moved:
+        h = m // width
+        w = m % width
+        states_list = list(states[i] for i in range(h * 15, h * 15 + 15) if 0 <= i < 225)
+        total_value += evaluate(states_list, player)
+
+        states_list = list(states[i] for i in range(w, 15 * 15 + w, width) if 0 <= i < 225)
+        total_value += evaluate(states_list, player)
+
+        states_list = []
+        point_list = []
+        pin = m % 16
+        point = m
+        while point % 16 <= pin and point >= 0:
+            point_list.append(point)
+            point -= 16
+        point = m + 16
+        while point % 16 > pin and point < 225:
+            point_list.append(point)
+            point += 16
+        point_list.sort()
+        states_list = list(states[i] for i in point_list)
+        total_value += evaluate(states_list, player)
+
+        states_list = []
+        point_list = []
+        pin = m % 14
+        point = m
+        while point % 14 >= pin and point > 0:
+            point_list.append(point)
+            point -= 14
+        point = m + 14
+        while point % 14 < pin and point < 225:
+            point_list.append(point)
+            point += 14
+        point_list.sort()
+        states_list = list(states[i] for i in point_list)
+        total_value += evaluate(states_list, player)
+        pass
+    return total_value
+
+
+def evaluate(states_list, player):
+    list_str = ""
+    for state in states_list:
+        if state == player:
+            list_str += "1"
+        elif state == 1 - player:
+            list_str += "2"
+        else:
+            list_str += "0"
+    list_str = "3" + list_str + "3"
+    tot_value = 0
+    if "010" in list_str:
+        tot_value += 10
+    if "210" or "310" or "012" or "013" in list_str:
+        tot_value += 5
+    if "212" or "213" or "312" in list_str:
+        tot_value -= 1
+    if "0110" in list_str:
+        tot_value += 100
+    if "2110" or "3110" or "0112" or "0113" in list_str:
+        tot_value += 50
+    if "2112" or "2113" or "3112" in list_str:
+        tot_value -= 10
+    if "01110" in list_str:
+        tot_value += 500
+    if "21110" or "31110" or "01112" or "01113" in list_str:
+        tot_value += 300
+    if "21112" or "21113" or "31112" in list_str:
+        tot_value -= 200
+    if "011110" in list_str:
+        tot_value += 100000
+    if "211110" or "311110" or "011112" or "011113" in list_str:
+        tot_value += 490
+    if "211112" or "211113" or "311112" in list_str:
+        tot_value -= 300
+    if "11111" in list_str and "111111" not in list_str:
+        tot_value += 100000
+
+    if "020" in list_str:
+        tot_value -= 15
+    if "120" or "320" or "021" or "023" in list_str:
+        tot_value -= 10
+    if "121" or "123" or "321" in list_str:
+        tot_value += 5
+    if "0220" in list_str:
+        tot_value -= 105
+    if "1220" or "3220" or "0221" or "0223" in list_str:
+        tot_value -= 55
+    if "1221" or "1223" or "3221" in list_str:
+        tot_value += 15
+    if "02220" in list_str:
+        tot_value -= 510
+    if "12220" or "32220" or "02221" or "02223" in list_str:
+        tot_value -= 410
+    if "12221" or "12223" or "32221" in list_str:
+        tot_value += 260
+    if "022220" in list_str:
+        tot_value -= 10010
+    if "122220" or "322220" or "022221" or "022223" in list_str:
+        tot_value -= 500
+    if "122221" or "122223" or "322221" in list_str:
+        tot_value += 260
+    if "22222" in list_str and "22222" not in list_str:
+        tot_value -= 10010
+    return tot_value
 
 
 def print_list(value_list):
