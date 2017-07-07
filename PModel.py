@@ -1,6 +1,7 @@
 from PChessBoard import *
 from collections import deque
 from PStartMenuView import *
+from SaveAndLoad import *
 import numpy as np
 import copy as copy
 import socket
@@ -69,7 +70,6 @@ class PMultipleModel(PModel):
         self.supplement = PPicture_Supplement()
         self.supplement.setPos(100,0)
 
-
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
         self.white_chessman_queue = deque()
@@ -77,22 +77,27 @@ class PMultipleModel(PModel):
         # some argument for a play
         self.num_pieces = 0
 
-        # return label
-        self.returnLabel = PReturn()
-        self.returnLabel.setPos(540,450)
-
         # cursor square
         self.square = PSquare()
+
+        # Save label
+        self.saveLabel = PSave()
+        self.saveLabel.setPos(540,310)
 
         # undo label
         self.undoLabel = PUndo()
         self.undoLabel.setPos(540,380)
 
+        # return label
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,450)
+
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
+        self.addItem(self.square)
+        self.addItem(self.saveLabel)
         self.addItem(self.returnLabel)
         self.addItem(self.undoLabel)
-        self.addItem(self.square)
         pass
 
     # restart
@@ -105,23 +110,29 @@ class PMultipleModel(PModel):
 
         self.chessboard = PChessBoard()
 
-        self.returnLabel = PReturn()
-        self.returnLabel.setPos(540,450)
+        # supplement pic
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100,0)
 
+        # cursor
         self.square = PSquare()
         self.square.hide()
 
-        self.supplement = PPicture_Supplement()
-        self.supplement.setPos(100,0)
+
 
         # undo label
         self.undoLabel = PUndo()
         self.undoLabel.setPos(540,380)
 
+        # return label
+        self.returnLabel = PReturn()
+        self.returnLabel.setPos(540,450)
+
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
-        self.addItem(self.returnLabel)
         self.addItem(self.square)
+        self.addItem(self.saveLabel)
+        self.addItem(self.returnLabel)
         self.addItem(self.undoLabel)
 
     # mouse move event
@@ -173,13 +184,17 @@ class PMultipleModel(PModel):
         if event.button() == Qt.LeftButton:
             print(event.scenePos().x(), event.scenePos().y())
 
-            # if one the return button
-            if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
-                self.Signal_ChangeModel.emit(1)
+            # if on the save button
+            if 540 <= event.scenePos().x() <= 690 and 310 <= event.scenePos().y() <= 380:
+                Save_ChessBoard(self.situation_matrix,"multiple.txt")
 
             # if on the undo button
             if 540 <= event.scenePos().x() <= 690 and 380 <= event.scenePos().y() <= 440:
                 self.Undo()
+
+            # if on the return button
+            if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
+                self.Signal_ChangeModel.emit(1)
 
             # if on the chess board
             if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20\
@@ -337,12 +352,6 @@ class PSingleModel(PModel):
             self.level = 2
         else:
             pass
-
-            # chessman, 2 standing for white
-        # TODO:to dicide whether we need following statements
-
-
-        pass
 
     # strategy functions
     def get_move_easy(self):

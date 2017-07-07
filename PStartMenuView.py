@@ -153,5 +153,23 @@ class PUndo(QGraphicsPixmapItem):
         self.setPixmap(self.pic_undo_1)
         return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
 
+# Save
+class PSave(QGraphicsPixmapItem):
+    def __init__(self, parent: QGraphicsPixmapItem = None):
+        super().__init__()
+        self.pic_save_1 = QPixmap("resources//pic//save_1.png")
+        self.pic_save_2 = QPixmap("resources//pic//save_2.png")
+
+        self.setAcceptHoverEvents(True)
+        self.setPixmap(self.pic_save_1)
+
+    def hoverEnterEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_save_2)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
+    def hoverLeaveEvent(self, QGraphicsSceneHoverEvent):
+        self.setPixmap(self.pic_save_1)
+        return super().hoverLeaveEvent(QGraphicsSceneHoverEvent)
+
 
 
