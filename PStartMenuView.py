@@ -123,7 +123,7 @@ class PSquare(QGraphicsPixmapItem):
 class PWaitingBoard(QGraphicsPixmapItem):
     def __init__(self, parent: QGraphicsPixmapItem = None):
         super().__init__()
-        self.background = QPixmap("resources//pic//square_white.png")
+        self.background = QPixmap("resources//pic//waitBoard.jpg")
         self.setPixmap(self.background)
 
 

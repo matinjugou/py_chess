@@ -5,7 +5,7 @@ from SaveAndLoad import *
 import numpy as np
 import copy as copy
 import socket
-import time as time
+import time
 import threading
 
 
@@ -53,7 +53,7 @@ class PStartMenu(PModel):
                 self.Signal_ChangeModel.emit(2)
             elif 80.0 <= event.scenePos().y() <= 150.0:
                 self.Signal_ChangeModel.emit(3)
-            elif 150 <= event.scenePos().y() <= 220:
+            elif 150.0 <= event.scenePos().y() <= 220.0:
                 self.Signal_ChangeModel.emit(4)
             pass
 
@@ -176,7 +176,6 @@ class PMultipleModel(PModel):
                 self.situation_matrix[temp_row][temp_col] = 0
                 self.num_pieces -= 1
 
-
     # mouse press event
     def mousePressEvent(self, event):
         super(PMultipleModel, self).mousePressEvent(event)
@@ -244,7 +243,7 @@ class PMultipleModel(PModel):
             pass
 
     # win notification
-    def end_game(self,player):
+    def end_game(self, player):
         # black wins
         if player == 1:
             button = QMessageBox.question(None,"胜利！",
@@ -262,7 +261,6 @@ class PMultipleModel(PModel):
             self.restart()
         else:
             self.restart()
-
 
 
 class Board(object):
@@ -328,6 +326,7 @@ class PSingleModel(PModel):
         self.square = PSquare()
         # return label
         self.returnLabel = PReturn()
+
         self.returnLabel.setPos(540, 450)
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
@@ -484,7 +483,6 @@ class PSingleModel(PModel):
             pass
         return best
 
-
     def evaluate_func(self, board):
         value = 0
         return value
@@ -624,16 +622,16 @@ class PSingleModel(PModel):
     def end_game(self,player):
         # black wins
         if player == 1:
-            button = QMessageBox.question(None,"胜利！",
-                                    self.tr("黑方获胜！"),
-                                    QMessageBox.Ok|QMessageBox.Cancel,
-                                    QMessageBox.Ok)
+            button = QMessageBox.question(None, "胜利！"
+                                          , self.tr("黑方获胜！")
+                                          , QMessageBox.Ok | QMessageBox.Cancel
+                                          , QMessageBox.Ok)
         # white wins
         else:
-            button = QMessageBox.question(None,"胜利！",
-                                    self.tr("白方获胜！"),
-                                    QMessageBox.Ok|QMessageBox.Cancel,
-                                    QMessageBox.Ok)
+            button = QMessageBox.question(None, "胜利！"
+                                          , self.tr("白方获胜！")
+                                          , QMessageBox.Ok | QMessageBox.Cancel
+                                          , QMessageBox.Ok)
 
         if button == QMessageBox.Ok:
             self.restart()
@@ -809,6 +807,248 @@ def check_win_white(matrix):
     return 0
 
 
+class BroadcastAccepter(QThread):
+    Signal_recv_address_list = pyqtSignal(list, name = "Signal_recv_address_list")
+
+    def __init__(self, parent = None):
+        super(BroadcastAccepter, self).__init__(parent)
+        self.get_address = {}
+        self.send_address = []
+        self.running = 1
+        # self.broadcast_socket.setblocking(0)
+        self.PORT = 1060
+
+    def run(self):
+        self.broadcast_recv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.broadcast_recv_socket.settimeout(3)
+        self.broadcast_recv_socket.bind((' ', self.PORT))
+        last_len = 2
+        while self.running:
+            print("receiver still working")
+            try:
+                data, address = self.broadcast_recv_socket.recvfrom(65535)
+                self.get_address[address] = (last_len + 2, data.decode('utf-8'))
+            except:
+                pass
+            self.send_address = []
+            for key in self.get_address.keys():
+                if self.get_address[key][0] > 0:
+                    data_list = self.get_address[key][1].split(' ')
+                    self.send_address.append((data_list[0], data_list[1]))
+                    self.get_address[key] = (self.get_address[key][0] - 1, self.get_address[key][1])
+            last_len = len(self.send_address)
+
+        self.broadcast_recv_socket.shutdown(2)
+        self.broadcast_recv_socket.close()
+        self.exit(0)
+
+    def send_address_list(self):
+        return self.send_address
+
+
+class BroadcastSender(QThread):
+    Signal_get_pos = pyqtSignal(int, int, name = "Signal_get_pos")
+
+    def __init__(self, parent = None):
+        super(BroadcastSender, self).__init__(parent)
+        self.network = '<broadcast>'
+        self.port = 1060
+        self.address = socket.gethostbyname_ex(socket.gethostname())[2][-1]
+        self.name = " "
+        self.running = 1
+
+    def run(self):
+        self.broadcasting_address = self.name + " " + self.address
+        self.broadcast_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.broadcast_send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        while self.running:
+            self.broadcast_send_socket.sendto(self.broadcasting_address.encode('utf-8'), (self.network, self.port))
+            time.sleep(1)
+            print("sender still working")
+        self.broadcast_send_socket.shutdown(2)
+        self.broadcast_send_socket.close()
+        self.exit(0)
+
+
+class GameLinker(QThread):
+    Signal_get_message = pyqtSignal(str, name="Signal_get_message")
+
+    def __init__(self, parent=None):
+        super(GameLinker, self).__init__(parent)
+        self.network = '<broadcast>'
+        self.port = 1061
+        self.name = None
+        self.address = None
+        self.running = 1
+        self.is_as_client = False
+        self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.game_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.recv_threading = None
+
+    def run(self):
+        if self.is_as_client:
+            self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.connecting_socket.connect((self.address, self.port))
+            self.recv_threading = threading.Thread(target=self.recv_msg, args=(self.connecting_socket,))
+            self.recv_threading.start()
+            while True and self.running:
+                send_str = input()
+                self.connecting_socket.send(send_str.encode('utf-8'))
+            pass
+        else:
+            self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.connecting_socket.bind((self.address, 1061))
+            self.connecting_socket.listen(5)
+            self.game_socket, addr = self.connecting_socket.accept()
+            self.recv_threading = threading.Thread(target=self.recv_msg, args=(self.game_socket,))
+            self.recv_threading.start()
+            while True and self.running:
+                send_str = input()
+                self.game_socket.send(send_str.encode('utf-8'))
+            pass
+            self.game_socket.shutdown(2)
+            self.game_socket.close()
+        self.connecting_socket.shutdown(2)
+        self.connecting_socket.close()
+        self.exit(0)
+
+    def recv_msg(self, recv_socket):
+        while True:
+            data = recv_socket.recv(1024).decode()
+            print(data)
+
+
+class PListAddress(QListWidgetItem):
+    def __init__(self, name, address, parent=None):
+        super(PListAddress, self).__init__(parent)
+        self.name = name
+        self.address = address
+
+
+class PListDialog(QDialog):
+    Signal_send_linker = pyqtSignal(GameLinker, name="Signal_send_linker")
+
+    def __init__(self, parent=None):
+        super(PListDialog, self).__init__(parent)
+        self.setGeometry(600, 200, 600, 400)
+        self.setFixedSize(600, 400)
+
+        # component
+        self.refresh_button = QPushButton()
+        self.refresh_button.setFixedSize(100, 30)
+        self.refresh_button.setText("刷新")
+        self.refresh_button.clicked.connect(self.refresh_address_list)
+
+        self.link_button = QPushButton()
+        self.link_button.setFixedSize(100, 30)
+        self.link_button.setText("连接")
+        self.link_button.clicked.connect(self.connect_to_player)
+
+        self.name_input = QLineEdit()
+        self.name_input.setFixedSize(100, 20)
+
+        self.make_room_button = QPushButton()
+        self.make_room_button.setFixedSize(100, 30)
+        self.make_room_button.setText("创建房间")
+        self.make_room_button.clicked.connect(self.make_room)
+
+        self.cancel_button = QPushButton()
+        self.cancel_button.setFixedSize(100, 30)
+        self.cancel_button.setText("退出")
+
+        self.choices_list = QListWidget()
+
+        # layouts
+        self.main_layout = QHBoxLayout()
+        self.buttons_layout = QVBoxLayout()
+        self.list_layout = QVBoxLayout()
+
+        self.buttons_layout.addWidget(self.refresh_button)
+        self.buttons_layout.addWidget(self.link_button)
+        self.buttons_layout.addWidget(self.name_input)
+        self.buttons_layout.addWidget(self.make_room_button)
+        self.buttons_layout.addWidget(self.cancel_button)
+        self.buttons_layout.addStretch(7)
+        self.list_layout.addWidget(self.choices_list)
+        self.main_layout.addLayout(self.list_layout)
+        self.main_layout.addLayout(self.buttons_layout)
+
+        self.setLayout(self.main_layout)
+
+        # socket
+        self.address_list = []
+        self.broadcast_recv = BroadcastAccepter()
+        self.broadcast_sender = BroadcastSender()
+        self.game_linker_client = GameLinker()
+        self.game_linker_server = GameLinker()
+        self.broadcast_recv.Signal_recv_address_list.connect(self.accept_broadcast)
+        self.broadcast_recv.start()
+
+    def accept_broadcast(self, address_list):
+        print(address_list)
+        self.choices_list.clear()
+        for address in address_list:
+            self.choices_list.addItem(address)
+        pass
+
+    def refresh_address_list(self):
+        address_list = self.broadcast_recv.send_address_list()
+        self.choices_list.clear()
+        for address in address_list:
+            temp_list_item = PListAddress(address[0], address[1])
+            temp_list_item.setText(address[0])
+            self.choices_list.addItem(temp_list_item)
+        pass
+
+    def make_room(self):
+        name_str = self.name_input.text()
+        if len(name_str) > 0:
+            self.game_linker_client.running = 0
+            self.link_button.setDisabled(True)
+            self.broadcast_recv.running = 0
+            self.make_room_button.setText("停止广播")
+            self.make_room_button.clicked.disconnect(self.make_room)
+            self.make_room_button.clicked.connect(self.terminate_broadcast)
+            self.broadcast_sender.name = name_str
+            self.broadcast_sender.running = 1
+            self.broadcast_sender.start()
+            self.game_linker_server.address = "59.66.137.30"
+            self.game_linker_server.name = name_str
+            self.game_linker_server.is_as_client = False
+            self.game_linker_server.running = 1
+            self.game_linker_server.start()
+
+        else:
+            QMessageBox.question(None, "提示"
+                                 , self.tr("请输入昵称")
+                                 , QMessageBox.Ok
+                                 , QMessageBox.Ok)
+        pass
+
+    def terminate_broadcast(self):
+        self.game_linker_server.running = 0
+        self.link_button.setDisabled(False)
+        self.broadcast_sender.running = 0
+        self.make_room_button.setText("创建房间")
+        self.make_room_button.clicked.disconnect(self.terminate_broadcast)
+        self.make_room_button.clicked.connect(self.make_room)
+        self.broadcast_recv.running = 1
+        self.broadcast_recv.start()
+
+    def connect_to_player(self):
+        item_list = self.choices_list.selectedItems()
+        if len(item_list) > 0:
+            print("{}:{}".format(item_list[0].name, item_list[0].address))
+            self.game_linker_server.running = 0
+            self.game_linker_client.running = 1
+            self.game_linker_client.address = item_list[0].address
+            self.game_linker_client.name = "myself"
+            self.game_linker_client.is_as_client = True
+            self.game_linker_client.start()
+        pass
+
+
 # online model
 class POnlineModel(PModel):
     # signal to emit
@@ -820,8 +1060,6 @@ class POnlineModel(PModel):
         self.chessboard = PChessBoard()
         self.chessboard.setPos(0, 0)
         self.board = Board()
-        self.waiting_board = PWaitingBoard()
-
 
         # stack for black piece and white chess
         self.black_chessman_queue = deque()
@@ -840,47 +1078,44 @@ class POnlineModel(PModel):
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
+        self.square.hide()
 
         # game status
         self.receiving_broadcast = True
         self.game_start = False
         self.game_end = False
 
-        # socket
-        self.broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.broadcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.broadcast_socket.setblocking(0)
-        self.PORT = 1060
-        self.broadcast_socket.bind((' ', self.PORT))
-        self.game_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.list_window = PListDialog()
+        self.list_window.cancel_button.clicked.connect(self.quit_model)
+        self.list_window.setModal(True)
 
-        self.get_address = {}
-        self.t1 = threading.Thread(target=self.accept_broadcast)
-        self.t1.start()
+        self.list_window.show()
+        self.list_window.Signal_send_linker.connect(self.get_linker)
+        self.game_linker = None
 
-    def accept_broadcast(self):
-        while True:
-            try:
-                data, address = self.broadcast_socket.recvfrom(65535)
-                print('Server received from {}:{}'.format(address, data.decode('utf-8')))
-            except:
-                time.sleep(1)
-                continue
-            if address in self.get_address.keys():
-                self.get_address[address] = self.get_address[address] \
-                                            + len(self.get_address) + 1
-            for key in self.get_address.keys():
-                self.get_address[key] = self.get_address[key] - 1
-                if self.get_address[key] <= 0:
-                    self.get_address.pop(key)
+    def get_linker(self, game_linker):
+        self.game_linker = game_linker
 
+    def game_start(self):
+        self.chessboard.show()
+        self.returnLabel.show()
+        self.square.show()
+        pass
+
+    def quit_model(self):
+        self.list_window.broadcast_recv.running = 0
+        self.list_window.broadcast_sender.running = 0
+        self.list_window.hide()
+        self.Signal_ChangeModel.emit(1)
+        pass
 
     # mouse move event
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
         super(POnlineModel, self).mousePressEvent(event)
         # if on the chess board
         if self.chessboard.left_up_x - 20.0 <= event.scenePos().x() <= self.chessboard.right_down_x + 20.0 \
-                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0:
+                and self.chessboard.left_up_y - 20.0 <= event.scenePos().y() <= self.chessboard.right_down_y + 20.0\
+                and self.game_start:
             temp_col = int((event.scenePos().x() - self.chessboard.left_up_x
                             + 0.25 * self.chessboard.space) / self.chessboard.space)
             temp_row = int((event.scenePos().y() - self.chessboard.left_up_y
@@ -892,12 +1127,15 @@ class POnlineModel(PModel):
                                    * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
             else:
                 self.square.hide()
+        elif self.receiving_broadcast:
+
+            pass
 
     # mouse press event
     def mousePressEvent(self, event):
         super(POnlineModel, self).mousePressEvent(event)
         print(event.scenePos())
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and self.game_start:
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
             if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
@@ -947,3 +1185,7 @@ class POnlineModel(PModel):
                             print("white wins")
                             self.restart()
             pass
+        elif event.button() == Qt.LeftButton and self.receiving_broadcast:
+            if 100.0 <= event.scenePos().x() <= 200.0:
+
+                pass
