@@ -825,7 +825,8 @@ class BroadcastAccepter(QThread):
             self.send_address = []
             for key in self.get_address.keys():
                 if self.get_address[key][0] > 0:
-                    self.send_address.append((self.get_address[key][1], key[0]))
+                    data_list = self.get_address[key][1].split(' ')
+                    self.send_address.append((data_list[0], data_list[1]))
                     self.get_address[key] = (self.get_address[key][0] - 1, self.get_address[key][1])
             last_len = len(self.send_address)
 
@@ -844,14 +845,16 @@ class BroadcastSender(QThread):
         super(BroadcastSender, self).__init__(parent)
         self.network = '<broadcast>'
         self.port = 1060
+        self.address = socket.gethostbyname_ex(socket.gethostname())[2][-1]
         self.name = " "
         self.running = 1
 
     def run(self):
+        self.broadcasting_address = self.name + " " + self.address
         self.broadcast_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.broadcast_send_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         while self.running:
-            self.broadcast_send_socket.sendto(self.name.encode('utf-8'), (self.network, self.port))
+            self.broadcast_send_socket.sendto(self.broadcasting_address.encode('utf-8'), (self.network, self.port))
             time.sleep(1)
             print("sender still working")
         self.broadcast_send_socket.shutdown(2)
@@ -886,7 +889,7 @@ class GameLinker(QThread):
             pass
         else:
             self.connecting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.connecting_socket.bind(('localhost', 1061))
+            self.connecting_socket.bind((self.address, 1061))
             self.connecting_socket.listen(5)
             self.game_socket, addr = self.connecting_socket.accept()
             self.recv_threading = threading.Thread(target=self.recv_msg, args=(self.game_socket,))
@@ -1001,7 +1004,7 @@ class PListDialog(QDialog):
             self.broadcast_sender.name = name_str
             self.broadcast_sender.running = 1
             self.broadcast_sender.start()
-            self.game_linker_server.address = "localhost"
+            self.game_linker_server.address = "59.66.137.30"
             self.game_linker_server.name = name_str
             self.game_linker_server.is_as_client = False
             self.game_linker_server.running = 1
