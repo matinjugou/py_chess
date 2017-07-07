@@ -1105,14 +1105,20 @@ class POnlineModel(PModel):
 
         # return label
         self.returnLabel = PReturn()
-        self.returnLabel.setPos(540, 0)
+        self.returnLabel.setPos(540, 450)
+
+        # undo label
+        self.undoLabel = PUndo()
+        self.undoLabel.setPos(540, 380)
 
         # cursor square
         self.square = PSquare()
 
+        self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
+        self.addItem(self.undoLabel)
         self.square.hide()
 
         # game status
@@ -1139,26 +1145,27 @@ class POnlineModel(PModel):
         self.num_pieces = 0
         self.clear()
         self.board = Board()
+        self.supplement = PPicture_Supplement()
+        self.supplement.setPos(100, 0)
 
         self.chessboard = PChessBoard()
 
         self.returnLabel = PReturn()
-        self.returnLabel.setPos(540,450)
+        self.returnLabel.setPos(540, 450)
 
         self.square = PSquare()
         self.square.hide()
 
-
-
         # undo label
         self.undoLabel = PUndo()
-        self.undoLabel.setPos(540,380)
+        self.undoLabel.setPos(540, 380)
 
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.returnLabel)
         self.addItem(self.square)
         self.addItem(self.undoLabel)
+        self.square.hide()
 
     def add_chessman(self, temp_row, temp_col):
         if not self.is_as_client and self.num_pieces % 2 == 1:
@@ -1208,10 +1215,14 @@ class POnlineModel(PModel):
     def get_move_from_net(self):
         while True:
             data = self.game_socket.recv(1024).decode('utf-8')
-            data_list = data.split(',')
-            temp_row = int(data_list[0])
-            temp_col = int(data_list[1])
-            self.Signal_AddChessman.emit(temp_row, temp_col)
+            if data != "exit":
+                data_list = data.split(',')
+                temp_row = int(data_list[0])
+                temp_col = int(data_list[1])
+                self.Signal_AddChessman.emit(temp_row, temp_col)
+            else:
+                break
+        self.quit_game()
         pass
 
     def get_socket(self):
@@ -1254,9 +1265,12 @@ class POnlineModel(PModel):
                                    * (temp_col) - 17 + 20, self.chessboard.space * (temp_row) - 17 + 20)
             else:
                 self.square.hide()
-        elif self.receiving_broadcast:
 
-            pass
+    def quit_game(self):
+        self.game_socket.close()
+        if not self.is_as_client:
+            self.connecting_socket.close()
+        self.Signal_ChangeModel.emit(1)
 
     # mouse press event
     def mousePressEvent(self, event):
@@ -1265,9 +1279,9 @@ class POnlineModel(PModel):
         if event.button() == Qt.LeftButton and self.game_start:
             print(event.scenePos().x(), event.scenePos().y())
             # if one the return button
-            if 540 <= event.scenePos().x() <= 690 and 0 <= event.scenePos().y() <= 70:
-                self.Signal_ChangeModel.emit(3)
-
+            if 540 <= event.scenePos().x() <= 690 and 450 <= event.scenePos().y() <= 520:
+                self.game_socket.send("exit".encode('utf-8'))
+                self.quit_game()
             # if on the chess board
             if not self.is_as_client and self.num_pieces % 2 == 0:
                 if self.chessboard.left_up_x - 20 <= event.scenePos().x() <= self.chessboard.right_down_x + 20 \
