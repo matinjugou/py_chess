@@ -1,6 +1,7 @@
 from PItems import *
 from collections import deque
 from PyQt5.QtCore import *
+import PyQt5.QtGui as QtGui
 import numpy as np
 import copy as copy
 import socket
@@ -981,11 +982,13 @@ class PListAddress(QListWidgetItem):
 
 class PListDialog(QDialog):
     Signal_send_linker = pyqtSignal(GameLinker, name="Signal_send_linker")
+    Signal_quit_model = pyqtSignal()
 
     def __init__(self, parent=None):
         super(PListDialog, self).__init__(parent)
         self.setGeometry(600, 200, 600, 400)
         self.setFixedSize(600, 400)
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
 
         # component
         self.refresh_button = QPushButton()
@@ -1037,6 +1040,13 @@ class PListDialog(QDialog):
         self.game_linker_server = GameLinker()
         self.broadcast_recv.Signal_recv_address_list.connect(self.accept_broadcast)
         self.broadcast_recv.start()
+
+    def closeEvent(self, event: QtGui.QCloseEvent):
+        self.Signal_quit_model.emit()
+        self.broadcast_sender.running = 0
+        self.broadcast_recv.running = 0
+        event.accept()
+        pass
 
     def accept_broadcast(self, address_list):
         print(address_list)
@@ -1156,6 +1166,7 @@ class POnlineModel(PModel):
 
         self.list_window = PListDialog()
         self.list_window.cancel_button.clicked.connect(self.quit_model)
+        self.list_window.Signal_quit_model.connect(self.quit_model)
         self.list_window.setModal(True)
 
         self.list_window.show()
