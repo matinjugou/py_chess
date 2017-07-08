@@ -189,6 +189,10 @@ class PMultipleModel(PModel):
         self.returnLabel = PReturn()
         self.returnLabel.setPos(540,450)
 
+        # Save label
+        self.saveLabel = PSave()
+        self.saveLabel.setPos(540,310)
+
         self.addItem(self.supplement)
         self.addItem(self.chessboard)
         self.addItem(self.square)
