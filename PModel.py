@@ -887,7 +887,7 @@ class BroadcastAccepter(QThread):
         self.broadcast_recv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.broadcast_recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.broadcast_recv_socket.settimeout(3)
-        self.broadcast_recv_socket.bind((' ', self.PORT))
+        self.broadcast_recv_socket.bind(('0.0.0.0', self.PORT))
         last_len = 2
         while self.running:
             print("receiver still working")
