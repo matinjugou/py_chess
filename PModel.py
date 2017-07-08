@@ -671,47 +671,47 @@ class PSingleModel(PModel):
             self.restart()
 
 
-def print_list(value_list):
-        count = 0
-        value_row_list = []
-        for i in range(225):
-            value_row_list.append(str(value_list[i]))
-            count += 1
-            if count == 15:
-                print(' '.join(value_row_list))
-                value_row_list = []
-                count = 0
-        pass
+    def print_list(value_list):
+            count = 0
+            value_row_list = []
+            for i in range(225):
+                value_row_list.append(str(value_list[i]))
+                count += 1
+                if count == 15:
+                    print(' '.join(value_row_list))
+                    value_row_list = []
+                    count = 0
+            pass
 
 
-def has_a_winner(board):
-    """
-    检查是否有玩家获胜
-    """
-    moved = list(set(range(225)) - set(board.available))
-    if len(moved) < 5 + 2:
+    def has_a_winner(board):
+        """
+        检查是否有玩家获胜
+        """
+        moved = list(set(range(225)) - set(board.available))
+        if len(moved) < 5 + 2:
+            return False, -1
+        width = 15
+        height = 15
+        states = board.states
+        n = 5
+        for m in moved:
+            h = m // width
+            w = m % width
+            player = states[m]
+            if (w in range(width - n + 1) and
+                        len(set(states[i] for i in range(m, m + n))) == 1):  # 横向连成一线
+                return True, player
+            if (h in range(height - n + 1) and
+                        len(set(states[i] for i in range(m, m + n * width, width))) == 1):  # 竖向连成一线
+                return True, player
+            if (w in range(width - n + 1) and h in range(height - n + 1) and
+                        len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):  # 右斜向上连成一线
+                return True, player
+            if (w in range(n - 1, width) and h in range(height - n + 1) and
+                        len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):  # 左斜向下连成一线
+                return True, player
         return False, -1
-    width = 15
-    height = 15
-    states = board.states
-    n = 5
-    for m in moved:
-        h = m // width
-        w = m % width
-        player = states[m]
-        if (w in range(width - n + 1) and
-                    len(set(states[i] for i in range(m, m + n))) == 1):  # 横向连成一线
-            return True, player
-        if (h in range(height - n + 1) and
-                    len(set(states[i] for i in range(m, m + n * width, width))) == 1):  # 竖向连成一线
-            return True, player
-        if (w in range(width - n + 1) and h in range(height - n + 1) and
-                    len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1):  # 右斜向上连成一线
-            return True, player
-        if (w in range(n - 1, width) and h in range(height - n + 1) and
-                    len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1):  # 左斜向下连成一线
-            return True, player
-    return False, -1
 
 
 # check win for black piece
